@@ -546,19 +546,44 @@
 
                 <div className="card" style={{marginBottom:24}}>
                   <h3 style={{fontSize:14,marginBottom:12}}>Dateien laden</h3>
-                  <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
-                    <div>
-                      <input ref={fRef} type="file" style={{display:"none"}} onChange={e => e.target.files[0] && loadToday(e.target.files[0])} />
-                      <button onClick={() => fRef.current?.click()} className="btn btn-primary" disabled={busy}>
-                        {busy ? "⏳" : "📁"} Aktuelle Datei laden
-                      </button>
-                    </div>
-                    <div>
-                      <input ref={fRef2} type="file" style={{display:"none"}} onChange={e => e.target.files[0] && loadYesterday(e.target.files[0])} />
-                      <button onClick={() => fRef2.current?.click()} className="btn btn-secondary" disabled={busy}>
-                        📁 Vergleichsdatei laden
-                      </button>
-                    </div>
+                  
+                  {/* Drop Zone */}
+                  <div 
+                    onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#f59e0b'; e.currentTarget.style.background = 'rgba(245,158,11,0.1)'; }}
+                    onDragLeave={e => { e.currentTarget.style.borderColor = '#334155'; e.currentTarget.style.background = 'transparent'; }}
+                    onDrop={e => { 
+                      e.preventDefault(); 
+                      e.currentTarget.style.borderColor = '#334155'; 
+                      e.currentTarget.style.background = 'transparent';
+                      const file = e.dataTransfer.files[0];
+                      if (file) loadToday(file);
+                    }}
+                    onClick={() => fRef.current?.click()}
+                    style={{
+                      border: '2px dashed #334155',
+                      borderRadius: 12,
+                      padding: 40,
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      marginBottom: 16
+                    }}
+                  >
+                    <div style={{fontSize:48,marginBottom:12}}>📂</div>
+                    <p style={{fontSize:16,fontWeight:600,color:'#e2e8f0',marginBottom:4}}>Renault Preisdatei hier ablegen</p>
+                    <p style={{fontSize:12,color:'#64748b'}}>oder klicken zum Auswählen</p>
+                    {busy && <p style={{fontSize:12,color:'#fbbf24',marginTop:8}}>⏳ Wird geladen...</p>}
+                  </div>
+                  
+                  <input ref={fRef} type="file" style={{display:"none"}} onChange={e => e.target.files[0] && loadToday(e.target.files[0])} />
+                  
+                  {/* Vergleichsdatei */}
+                  <div style={{display:"flex",gap:12,alignItems:"center"}}>
+                    <input ref={fRef2} type="file" style={{display:"none"}} onChange={e => e.target.files[0] && loadYesterday(e.target.files[0])} />
+                    <button onClick={() => fRef2.current?.click()} className="btn btn-secondary" disabled={busy}>
+                      📁 Vergleichsdatei laden (optional)
+                    </button>
+                    <span style={{fontSize:11,color:'#64748b'}}>Für Preisvergleiche zwischen zwei Dateien</span>
                   </div>
                 </div>
 
