@@ -1,0 +1,12 @@
+{
+  "sftp": {
+    "host": "transfer.oe.parts",
+    "port": 2022,
+    "username": "renault",
+    "password": "MBLnamwhWwgpSd7",
+    "directory": "/"
+  },
+  "filePattern": "TLDRAGP_*",
+  "delimiter": ";",
+  "lastSync": null
+}

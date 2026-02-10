@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Renault Preislisten-Tool</title>
+  <title>Renault Preislisten-Tool V3</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
@@ -17,207 +17,199 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
     input:focus, button:focus { outline: none; }
-    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
-    input[type=number] { -moz-appearance: textfield; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #1e293b; }
     ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-    .toggle-track {
-      width: 36px; height: 20px; border-radius: 10px; position: relative; cursor: pointer;
-      transition: background 0.2s; display: inline-block; vertical-align: middle;
-    }
+    .toggle-track { width: 36px; height: 20px; border-radius: 10px; position: relative; cursor: pointer; transition: background 0.2s; display: inline-block; vertical-align: middle; }
     .toggle-track.on { background: #10b981; }
     .toggle-track.off { background: #475569; }
-    .toggle-thumb {
-      width: 16px; height: 16px; border-radius: 50%; background: white; position: absolute;
-      top: 2px; transition: left 0.2s;
-    }
+    .toggle-thumb { width: 16px; height: 16px; border-radius: 50%; background: white; position: absolute; top: 2px; transition: left 0.2s; }
     .toggle-track.on .toggle-thumb { left: 18px; }
     .toggle-track.off .toggle-thumb { left: 2px; }
-    .year-sel {
-      display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px;
-      border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 2px solid transparent;
-      user-select: none;
-    }
-    .year-sel.active { border-color: #f59e0b; background: rgba(245,158,11,0.1); }
-    .year-sel.inactive { border-color: #334155; background: rgba(30,41,59,0.4); opacity: 0.6; }
-    .year-sel:hover { opacity: 1; }
-    .rdot {
-      width: 16px; height: 16px; border-radius: 50%; border: 2px solid #475569;
-      display: flex; align-items: center; justify-content: center; transition: all 0.2s;
-    }
-    .rdot.checked { border-color: #f59e0b; }
-    .rdot.checked::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; }
-    .cell-e {
-      cursor: pointer; padding: 2px 5px; border-radius: 4px; font-variant-numeric: tabular-nums;
-      transition: all 0.15s; border: 1px dashed transparent; display: inline-block;
-    }
-    .cell-e:hover { background: rgba(255,255,255,0.06); border-color: #475569; }
+    .tab-btn { padding: 8px 16px; border-radius: 7px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s; }
+    .tab-btn.active { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; }
+    .tab-btn:not(.active) { background: transparent; color: #94a3b8; }
+    .card { background: rgba(30,41,59,0.6); border: 1px solid #334155; border-radius: 12px; padding: 20px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: 600; }
+    .badge-green { background: #064e3b; color: #6ee7b7; }
+    .badge-red { background: #7f1d1d; color: #fca5a5; }
+    .badge-yellow { background: #78350f; color: #fcd34d; }
+    .badge-blue { background: #1e3a5f; color: #93c5fd; }
+    .btn { padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+    .btn-primary { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; }
+    .btn-secondary { background: #334155; color: #e2e8f0; }
+    .btn-danger { background: #7f1d1d; color: #fca5a5; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #334155; }
+    th { background: #1e293b; color: #94a3b8; font-weight: 600; font-size: 11px; text-transform: uppercase; }
+    tr:hover { background: rgba(255,255,255,0.02); }
+    .change-up { color: #f87171; }
+    .change-down { color: #4ade80; }
+    .change-new { color: #60a5fa; }
+    .change-del { color: #fb923c; }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useRef, useMemo, useCallback } = React;
+    const { useState, useRef, useMemo, useCallback, useEffect } = React;
 
-    // Login credentials
+    // === CONFIG ===
     const AUTH_USER = "oe";
     const AUTH_PASS = "deals!!@1234#";
-    const AUTH_KEY = "renault-auth";
-
+    const AUTH_KEY = "renault-auth-v3";
+    const DATA_KEY = "renault-data-v3";
+    const SETTINGS_KEY = "renault-settings-v3";
     const YEARS = [2025, 2026, 2027];
     const DLNR = "7455";
-    const SK = "renault-pl-v6";
 
+    // Teile-Code Beschreibungen
+    const TEILE_CODE = {
+      " ": "Normal",
+      "1": "Austauschbar mit",
+      "2": "Wird ersetzt durch",
+      "3": "Nicht mehr lieferbar",
+      "4": "Gesperrt, später lieferbar"
+    };
+
+    // === FIELD PARSER (Pos in der Datei) ===
+    const parseRecord = (line) => {
+      const c = line.split(";");
+      if (c.length < 30) return null;
+      return {
+        satzart: c[0],
+        version: c[1],
+        datum: c[2],
+        zeit: c[3],
+        satznr: c[4],
+        satzanz: c[5],
+        teilenr: c[6]?.trim(),
+        teileCode: c[7]?.trim(),
+        austauschNr: c[8]?.trim(),
+        bez1: c[9]?.trim(),
+        bez2: c[10]?.trim(),
+        upeCent: parseInt(c[11], 10) || 0,
+        waehrung: c[12],
+        mwstCode: c[13],
+        nettoCode: c[14],
+        rabattGruppe: c[15]?.trim(),
+        r1Bonus: c[16],
+        pfand: parseInt(c[17], 10) || 0,
+        vpe: c[18],
+        gewicht: parseInt(c[19], 10) || 0,
+        volumen: parseInt(c[20], 10) || 0,
+        familie: (c[21]?.trim() || "") + (c[22]?.trim() || ""),
+        segment: c[23],
+        gaengig1: c[24],
+        gaengig2: c[25],
+        hersteller: c[26],
+        herkunft: c[27],
+        rueckgabe: c[28],
+        werbung: c[29],
+      };
+    };
+
+    // === DEFAULT RABATTE (from V2) ===
     const DEFAULTS = {
       "002E":{2025:{vk:0,ek:66},2026:{vk:0,ek:67.4},2027:{vk:0,ek:67.4},sonder:{vk:0,ek:0,active:false}},
       "002K":{2025:{vk:5,ek:55},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "002M":{2025:{vk:62,ek:66},2026:{vk:0,ek:0},2027:{vk:62,ek:0},sonder:{vk:62,ek:0,active:false}},
       "027E":{2025:{vk:49,ek:53},2026:{vk:49,ek:54.6},2027:{vk:49,ek:54.6},sonder:{vk:49,ek:0,active:false}},
-      "027K":{2025:{vk:5,ek:43},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "033K":{2025:{vk:5,ek:63},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "034K":{2025:{vk:5,ek:63},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "035K":{2025:{vk:5,ek:63},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "042K":{2025:{vk:5,ek:59},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "060K":{2025:{vk:5,ek:51},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "111U":{2025:{vk:53,ek:57},2026:{vk:53,ek:54.6},2027:{vk:53,ek:54.6},sonder:{vk:53,ek:0,active:false}},
-      "112K":{2025:{vk:5,ek:21},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "114K":{2025:{vk:5,ek:63},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "114U":{2025:{vk:64,ek:69},2026:{vk:64,ek:68.2},2027:{vk:64,ek:68.2},sonder:{vk:64,ek:0,active:false}},
       "116U":{2025:{vk:55,ek:59.2},2026:{vk:55,ek:61.5},2027:{vk:55,ek:61.5},sonder:{vk:55,ek:0,active:false}},
       "126C":{2025:{vk:18.3,ek:26.5},2026:{vk:18.3,ek:27.9},2027:{vk:18.3,ek:27.9},sonder:{vk:18.3,ek:0,active:false}},
       "135U":{2025:{vk:55.6,ek:59.7},2026:{vk:55.6,ek:61.3},2027:{vk:55.6,ek:61.3},sonder:{vk:55.6,ek:0,active:false}},
-      "139K":{2025:{vk:5,ek:51},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "147C":{2025:{vk:52.1,ek:60.3},2026:{vk:52.1,ek:60.4},2027:{vk:52.1,ek:60.4},sonder:{vk:52.1,ek:0,active:false}},
       "150M":{2025:{vk:22.2,ek:26.5},2026:{vk:22.2,ek:32},2027:{vk:22.2,ek:32},sonder:{vk:22.2,ek:0,active:false}},
       "151E":{2025:{vk:53,ek:57},2026:{vk:53,ek:58},2027:{vk:53,ek:58},sonder:{vk:53,ek:0,active:false}},
-      "197K":{2025:{vk:5,ek:43},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "200C":{2025:{vk:48.8,ek:56.9},2026:{vk:48.8,ek:57.1},2027:{vk:48.8,ek:57.1},sonder:{vk:48.8,ek:0,active:false}},
       "201C":{2025:{vk:45.3,ek:53.5},2026:{vk:45.3,ek:53.8},2027:{vk:45.3,ek:53.8},sonder:{vk:45.3,ek:0,active:false}},
       "203C":{2025:{vk:48.8,ek:56.9},2026:{vk:48.8,ek:57.1},2027:{vk:48.8,ek:57.1},sonder:{vk:48.8,ek:0,active:false}},
       "204C":{2025:{vk:48.1,ek:56.3},2026:{vk:48.1,ek:59.1},2027:{vk:48.1,ek:59.1},sonder:{vk:48.1,ek:0,active:false}},
-      "226C":{2025:{vk:18.1,ek:26.5},2026:{vk:18.1,ek:26.5},2027:{vk:18.1,ek:26.5},sonder:{vk:18.1,ek:0,active:false}},
-      "231C":{2025:{vk:33.6,ek:41.8},2026:{vk:0,ek:0},2027:{vk:33.6,ek:0},sonder:{vk:33.6,ek:0,active:false}},
       "271M":{2025:{vk:47,ek:53},2026:{vk:47,ek:43},2027:{vk:47,ek:43},sonder:{vk:47,ek:0,active:false}},
       "282C":{2025:{vk:48.8,ek:56.9},2026:{vk:48.8,ek:57.1},2027:{vk:48.8,ek:57.1},sonder:{vk:48.8,ek:0,active:false}},
-      "283C":{2025:{vk:18.3,ek:26.5},2026:{vk:0,ek:0},2027:{vk:18.3,ek:0},sonder:{vk:18.3,ek:0,active:false}},
       "284C":{2025:{vk:48.85,ek:56.9},2026:{vk:48.85,ek:57.1},2027:{vk:48.85,ek:57.1},sonder:{vk:48.85,ek:0,active:false}},
       "289C":{2025:{vk:33.6,ek:41.8},2026:{vk:33.6,ek:50.2},2027:{vk:33.6,ek:50.2},sonder:{vk:33.6,ek:0,active:false}},
       "338C":{2025:{vk:18.3,ek:26.5},2026:{vk:18.3,ek:27.6},2027:{vk:18.3,ek:27.6},sonder:{vk:18.3,ek:0,active:false}},
       "341C":{2025:{vk:18.3,ek:26.5},2026:{vk:18.3,ek:27.6},2027:{vk:18.3,ek:27.6},sonder:{vk:18.3,ek:0,active:false}},
       "346C":{2025:{vk:18.3,ek:26.5},2026:{vk:18.3,ek:29.9},2027:{vk:18.3,ek:29.9},sonder:{vk:18.3,ek:0,active:false}},
       "352E":{2025:{vk:55.6,ek:60.7},2026:{vk:55.6,ek:63.5},2027:{vk:55.6,ek:63.5},sonder:{vk:55.6,ek:0,active:false}},
-      "352K":{2025:{vk:5,ek:59},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "384K":{2025:{vk:5,ek:51},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "416C":{2025:{vk:18.3,ek:26.5},2026:{vk:18.3,ek:32},2027:{vk:18.3,ek:32},sonder:{vk:18.3,ek:0,active:false}},
       "471C":{2025:{vk:18.3,ek:26.5},2026:{vk:18.3,ek:27.9},2027:{vk:18.3,ek:27.9},sonder:{vk:18.3,ek:0,active:false}},
       "481E":{2025:{vk:58.6,ek:62.8},2026:{vk:58.6,ek:64.9},2027:{vk:58.6,ek:64.9},sonder:{vk:58.6,ek:0,active:false}},
       "501E":{2025:{vk:62,ek:66},2026:{vk:62,ek:65.8},2027:{vk:62,ek:65.8},sonder:{vk:62,ek:0,active:false}},
-      "501K":{2025:{vk:5,ek:59},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "502E":{2025:{vk:60,ek:64},2026:{vk:60,ek:68.2},2027:{vk:60,ek:68.2},sonder:{vk:60,ek:0,active:false}},
-      "502K":{2025:{vk:5,ek:59},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "503E":{2025:{vk:56,ek:60},2026:{vk:56,ek:64.8},2027:{vk:56,ek:64.8},sonder:{vk:56,ek:0,active:false}},
-      "503K":{2025:{vk:5,ek:51},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "507E":{2025:{vk:5,ek:68},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "507K":{2025:{vk:5,ek:51},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "510M":{2025:{vk:45,ek:51},2026:{vk:45,ek:50.7},2027:{vk:45,ek:50.7},sonder:{vk:45,ek:0,active:false}},
       "513E":{2025:{vk:61.6,ek:65.7},2026:{vk:61.6,ek:67.7},2027:{vk:61.6,ek:67.7},sonder:{vk:61.6,ek:0,active:false}},
       "520E":{2025:{vk:64,ek:68.1},2026:{vk:64,ek:72.9},2027:{vk:64,ek:72.9},sonder:{vk:64,ek:0,active:false}},
-      "520K":{2025:{vk:5,ek:59},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "532K":{2025:{vk:5,ek:59},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "541K":{2025:{vk:5,ek:51},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "545K":{2025:{vk:5,ek:51},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "553C":{2025:{vk:18.3,ek:26.5},2026:{vk:18.3,ek:36},2027:{vk:18.3,ek:36},sonder:{vk:18.3,ek:0,active:false}},
       "554E":{2025:{vk:56.6,ek:60.7},2026:{vk:56.6,ek:61.1},2027:{vk:56.6,ek:61.1},sonder:{vk:56.6,ek:0,active:false}},
-      "554K":{2025:{vk:5,ek:55},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "559M":{2025:{vk:42,ek:48},2026:{vk:42,ek:48.2},2027:{vk:42,ek:48.2},sonder:{vk:42,ek:0,active:false}},
       "565M":{2025:{vk:55,ek:59.3},2026:{vk:55,ek:60.8},2027:{vk:55,ek:60.8},sonder:{vk:55,ek:0,active:false}},
       "573M":{2025:{vk:42,ek:48},2026:{vk:42,ek:48.2},2027:{vk:42,ek:48.2},sonder:{vk:42,ek:0,active:false}},
       "576U":{2025:{vk:48,ek:54},2026:{vk:48,ek:53.9},2027:{vk:48,ek:53.9},sonder:{vk:48,ek:0,active:false}},
       "581E":{2025:{vk:64,ek:68.1},2026:{vk:64,ek:70.5},2027:{vk:64,ek:70.5},sonder:{vk:64,ek:0,active:false}},
-      "581K":{2025:{vk:5,ek:59},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "591C":{2025:{vk:30,ek:38.4},2026:{vk:30,ek:43.7},2027:{vk:30,ek:43.7},sonder:{vk:30,ek:0,active:false}},
-      "601K":{2025:{vk:5,ek:59},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "601U":{2025:{vk:62,ek:66},2026:{vk:62,ek:59.3},2027:{vk:62,ek:59.3},sonder:{vk:62,ek:0,active:false}},
       "616C":{2025:{vk:48.8,ek:57},2026:{vk:48.8,ek:60.8},2027:{vk:48.8,ek:60.8},sonder:{vk:48.8,ek:0,active:false}},
-      "631K":{2025:{vk:5,ek:43},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "631U":{2025:{vk:48.6,ek:52.8},2026:{vk:48.6,ek:54.6},2027:{vk:48.6,ek:54.6},sonder:{vk:48.6,ek:0,active:false}},
       "632C":{2025:{vk:47,ek:55.4},2026:{vk:47,ek:59.1},2027:{vk:47,ek:59.1},sonder:{vk:47,ek:0,active:false}},
       "633C":{2025:{vk:47,ek:55.4},2026:{vk:47,ek:59.1},2027:{vk:47,ek:59.1},sonder:{vk:47,ek:0,active:false}},
       "634C":{2025:{vk:53,ek:61},2026:{vk:53,ek:61.7},2027:{vk:53,ek:61.7},sonder:{vk:53,ek:0,active:false}},
-      "635K":{2025:{vk:5,ek:59},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "642M":{2025:{vk:40,ek:46},2026:{vk:40,ek:45},2027:{vk:40,ek:45},sonder:{vk:40,ek:0,active:false}},
       "646C":{2025:{vk:39.6,ek:47.7},2026:{vk:39.6,ek:53},2027:{vk:39.6,ek:53},sonder:{vk:39.6,ek:0,active:false}},
       "651C":{2025:{vk:30,ek:38.4},2026:{vk:30,ek:43.7},2027:{vk:30,ek:43.7},sonder:{vk:30,ek:0,active:false}},
       "658E":{2025:{vk:69,ek:73},2026:{vk:69,ek:72.9},2027:{vk:69,ek:72.9},sonder:{vk:69,ek:0,active:false}},
-      "658K":{2025:{vk:5,ek:59},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "673K":{2025:{vk:5,ek:51},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "674E":{2025:{vk:61.6,ek:65.6},2026:{vk:61.6,ek:72.9},2027:{vk:61.6,ek:72.9},sonder:{vk:61.6,ek:0,active:false}},
-      "674K":{2025:{vk:5,ek:59},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "696M":{2025:{vk:18,ek:22.2},2026:{vk:18,ek:27.8},2027:{vk:18,ek:27.8},sonder:{vk:18,ek:0,active:false}},
-      "802K":{2025:{vk:5,ek:21},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "803K":{2025:{vk:5,ek:63},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "803U":{2025:{vk:64.6,ek:68.8},2026:{vk:64.6,ek:69.4},2027:{vk:64.6,ek:69.4},sonder:{vk:64.6,ek:0,active:false}},
-      "804K":{2025:{vk:5,ek:59},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "807K":{2025:{vk:5,ek:59},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "807U":{2025:{vk:65.7,ek:69.9},2026:{vk:65.7,ek:70.2},2027:{vk:65.7,ek:70.2},sonder:{vk:65.7,ek:0,active:false}},
       "811U":{2025:{vk:37.4,ek:41.5},2026:{vk:37.4,ek:43.1},2027:{vk:37.4,ek:43.1},sonder:{vk:37.4,ek:0,active:false}},
-      "812K":{2025:{vk:5,ek:63},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "812U":{2025:{vk:60,ek:64},2026:{vk:60,ek:63.8},2027:{vk:60,ek:63.8},sonder:{vk:60,ek:0,active:false}},
-      "819K":{2025:{vk:5,ek:21},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "820K":{2025:{vk:5,ek:55},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "820U":{2025:{vk:55.8,ek:59.9},2026:{vk:55.8,ek:62.1},2027:{vk:55.8,ek:62.1},sonder:{vk:55.8,ek:0,active:false}},
-      "823K":{2025:{vk:5,ek:51},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "835K":{2025:{vk:5,ek:51},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "861C":{2025:{vk:51,ek:59.3},2026:{vk:51,ek:60.8},2027:{vk:51,ek:60.8},sonder:{vk:51,ek:0,active:false}},
       "864C":{2025:{vk:49,ek:57.4},2026:{vk:49,ek:58.7},2027:{vk:49,ek:58.7},sonder:{vk:49,ek:0,active:false}},
       "871C":{2025:{vk:32.7,ek:39.8},2026:{vk:32.7,ek:39.8},2027:{vk:32.7,ek:39.8},sonder:{vk:32.7,ek:0,active:false}},
-      "883K":{2025:{vk:5,ek:40},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "890C":{2025:{vk:22.6,ek:30.6},2026:{vk:22.6,ek:32},2027:{vk:22.6,ek:32},sonder:{vk:22.6,ek:0,active:false}},
-      "892K":{2025:{vk:5,ek:51},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
       "901C":{2025:{vk:53,ek:60},2026:{vk:53,ek:60.4},2027:{vk:53,ek:60.4},sonder:{vk:53,ek:0,active:false}},
       "918M":{2025:{vk:45,ek:51},2026:{vk:45,ek:52.2},2027:{vk:45,ek:52.2},sonder:{vk:45,ek:0,active:false}},
       "925C":{2025:{vk:26.7,ek:34.8},2026:{vk:26.7,ek:27.9},2027:{vk:26.7,ek:27.9},sonder:{vk:26.7,ek:0,active:false}},
-      "948K":{2025:{vk:5,ek:66},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "960K":{2025:{vk:5,ek:51},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "961K":{2025:{vk:5,ek:51},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}},
-      "977K":{2025:{vk:5,ek:55},2026:{vk:0,ek:0},2027:{vk:5,ek:0},sonder:{vk:5,ek:0,active:false}}
     };
 
     function mkDefault() {
       const fam = {};
       for (const [c, d] of Object.entries(DEFAULTS)) {
-        fam[c] = {
-          2025: d[2025],
-          2026: d[2026],
-          2027: d[2027],
-          sonder: d.sonder
-        };
+        fam[c] = { 2025: d[2025], 2026: d[2026], 2027: d[2027], sonder: d.sonder };
       }
       return { activeYear: 2026, families: fam };
     }
 
-    function load() {
+    function loadSettings() {
       try {
-        const s = localStorage.getItem(SK);
-        if (s) {
-          const p = JSON.parse(s);
-          for (const c of Object.keys(p.families)) {
-            const f = p.families[c];
-            for (const y of YEARS) if (!f[y]) f[y] = {vk:0,ek:0};
-            if (!f.sonder) f.sonder = {vk:0,ek:0,active:false};
-          }
-          if (!p.activeYear || p.activeYear === 2025) p.activeYear = 2026;
-          return p;
-        }
+        const s = localStorage.getItem(SETTINGS_KEY);
+        if (s) return JSON.parse(s);
       } catch(e) {}
       return mkDefault();
     }
 
-    function save(st) { try { localStorage.setItem(SK, JSON.stringify(st)); } catch(e) {} }
+    function saveSettings(st) { 
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(st)); } catch(e) {} 
+    }
+
+    function loadData() {
+      try {
+        const s = localStorage.getItem(DATA_KEY);
+        if (s) return JSON.parse(s);
+      } catch(e) {}
+      return { today: null, yesterday: null, todayName: null, yesterdayName: null };
+    }
+
+    function saveData(d) {
+      try { localStorage.setItem(DATA_KEY, JSON.stringify(d)); } catch(e) {}
+    }
 
     function rnd(v) { return Math.round(v * 100 + Number.EPSILON) / 100; }
 
@@ -229,31 +221,116 @@
       return null;
     }
 
-    function processCSV(csv, families, yr) {
-      const lines = csv.split(/\r?\n/).filter(l => l.trim());
+    function formatPrice(cents) {
+      return (cents / 100).toFixed(2).replace(".", ",") + " €";
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr || dateStr.length !== 8) return dateStr;
+      return `${dateStr.slice(6,8)}.${dateStr.slice(4,6)}.${dateStr.slice(0,4)}`;
+    }
+
+    // === COMPARE FUNCTIONS ===
+    function compareData(todayRecords, yesterdayRecords) {
+      const todayMap = new Map(todayRecords.map(r => [r.teilenr, r]));
+      const yesterdayMap = new Map(yesterdayRecords.map(r => [r.teilenr, r]));
+
+      const newArticles = [];
+      const deletedArticles = [];
+      const priceChanges = [];
+      const familyChanges = [];
+      const statusChanges = [];
+      const rabattChanges = [];
+
+      // Find new articles and changes
+      for (const [nr, today] of todayMap) {
+        const yesterday = yesterdayMap.get(nr);
+        if (!yesterday) {
+          newArticles.push(today);
+        } else {
+          // Price change
+          if (today.upeCent !== yesterday.upeCent) {
+            priceChanges.push({
+              ...today,
+              oldPrice: yesterday.upeCent,
+              newPrice: today.upeCent,
+              diff: today.upeCent - yesterday.upeCent,
+              diffPct: ((today.upeCent - yesterday.upeCent) / yesterday.upeCent * 100).toFixed(1)
+            });
+          }
+          // Family change
+          if (today.familie !== yesterday.familie) {
+            familyChanges.push({
+              ...today,
+              oldFamily: yesterday.familie,
+              newFamily: today.familie
+            });
+          }
+          // Status change (Teile-Code)
+          if (today.teileCode !== yesterday.teileCode) {
+            statusChanges.push({
+              ...today,
+              oldStatus: yesterday.teileCode,
+              newStatus: today.teileCode,
+              oldStatusText: TEILE_CODE[yesterday.teileCode] || yesterday.teileCode,
+              newStatusText: TEILE_CODE[today.teileCode] || today.teileCode
+            });
+          }
+          // Rabattgruppe change
+          if (today.rabattGruppe !== yesterday.rabattGruppe) {
+            rabattChanges.push({
+              ...today,
+              oldRabatt: yesterday.rabattGruppe,
+              newRabatt: today.rabattGruppe
+            });
+          }
+        }
+      }
+
+      // Find deleted articles
+      for (const [nr, yesterday] of yesterdayMap) {
+        if (!todayMap.has(nr)) {
+          deletedArticles.push(yesterday);
+        }
+      }
+
+      return {
+        newArticles,
+        deletedArticles,
+        priceChanges,
+        familyChanges,
+        statusChanges,
+        rabattChanges,
+        todayCount: todayRecords.length,
+        yesterdayCount: yesterdayRecords.length
+      };
+    }
+
+    // === PROCESS CSV FOR PRICE LIST ===
+    function processCSV(records, families, yr) {
       const dL = [], eL = [];
       let ok = 0, skip = 0, noD = 0;
-      for (const line of lines) {
-        const c = line.split(";");
-        if (c.length < 23) continue;
-        const art = c[6].trim(), desc = c[9].trim();
-        const lp = parseInt(c[11],10) / 100;
-        const w = parseInt(c[19],10);
-        const fc = c[21].trim() + c[22].trim();
+      
+      for (const r of records) {
+        const fc = r.familie;
         const fam = families[fc];
         if (!fam) { skip++; continue; }
         const d = getDisc(fam, yr);
         if (!d) { noD++; continue; }
+        
+        const lp = r.upeCent / 100;
         const bC = rnd(lp * (100 - d.vk) / 100);
         const bS = rnd(lp * (100 - d.ek) / 100);
-        dL.push(`${art};${lp.toFixed(2)};${bC.toFixed(2)}`);
-        eL.push(`${art};${lp.toFixed(2)};${bC.toFixed(2)};${bS.toFixed(2)};${d.vk};${d.ek};${desc};${w};${DLNR}`);
+        
+        dL.push(`${r.teilenr};${lp.toFixed(2)};${bC.toFixed(2)}`);
+        eL.push(`${r.teilenr};${lp.toFixed(2)};${bC.toFixed(2)};${bS.toFixed(2)};${d.vk};${d.ek};${r.bez1};${r.gewicht};${DLNR}`);
         ok++;
       }
+      
       return {
         defCSV: "article;list_price;buying_price\n" + dL.join("\n"),
         extCSV: "article;list_price;buying_price;buying_price_self;discount;discount_self;description;weight;DLNR\n" + eL.join("\n"),
-        ok, skip, noD, total: lines.length
+        ok, skip, noD, total: records.length
       };
     }
 
@@ -263,424 +340,562 @@
       a.download = fn; a.click();
     }
 
-    function Toggle({on, onToggle}) {
-      return <div className={`toggle-track ${on?"on":"off"}`} onClick={onToggle}><div className="toggle-thumb"/></div>;
-    }
-
+    // === MAIN APP ===
     function App() {
-      const [state, setState] = useState(load);
-      const [tab, setTab] = useState("upload");
-      const [result, setResult] = useState(null);
-      const [drag, setDrag] = useState(false);
+      const [loggedIn, setLoggedIn] = useState(() => localStorage.getItem(AUTH_KEY) === "1");
+      const [user, setUser] = useState("");
+      const [pass, setPass] = useState("");
+      const [loginErr, setLoginErr] = useState("");
+
+      const [tab, setTab] = useState("dashboard");
+      const [settings, setSettings] = useState(loadSettings);
+      const [data, setData] = useState(loadData);
+      const [comparison, setComparison] = useState(null);
+      const [priceResult, setPriceResult] = useState(null);
       const [busy, setBusy] = useState(false);
-      const [search, setSearch] = useState("");
-      const [nCode, setNCode] = useState("");
       const [msg, setMsg] = useState("");
-      const [eCell, setECell] = useState(null);
-      const [eVal, setEVal] = useState("");
+
       const fRef = useRef(null);
+      const fRef2 = useRef(null);
 
-      const { families, activeYear } = state;
+      const { families, activeYear } = settings;
 
-      const upd = useCallback((ns) => {
-        setState(ns); save(ns);
-        setMsg("✓ Gespeichert"); setTimeout(() => setMsg(""), 2000);
+      // Login
+      const doLogin = () => {
+        if (user === AUTH_USER && pass === AUTH_PASS) {
+          localStorage.setItem(AUTH_KEY, "1");
+          setLoggedIn(true);
+        } else {
+          setLoginErr("Falsche Zugangsdaten");
+        }
+      };
+
+      const logout = () => {
+        localStorage.removeItem(AUTH_KEY);
+        setLoggedIn(false);
+      };
+
+      // Update settings
+      const updSettings = useCallback((ns) => {
+        setSettings(ns); 
+        saveSettings(ns);
+        setMsg("✓ Gespeichert"); 
+        setTimeout(() => setMsg(""), 2000);
       }, []);
 
-      const setYear = y => upd({...state, activeYear: y});
-
-      const setField = (code, grp, field, val) => {
-        const nf = {...families, [code]: {...families[code], [grp]: {...families[code][grp], [field]: val}}};
-        upd({...state, families: nf});
+      // Parse file
+      const parseFile = async (file) => {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(l => l.trim() && l.startsWith("RDAGTK"));
+        return lines.map(parseRecord).filter(Boolean);
       };
 
-      const togSonder = code => {
-        const f = families[code];
-        const nf = {...families, [code]: {...f, sonder: {...f.sonder, active: !f.sonder.active}}};
-        upd({...state, families: nf});
-      };
-
-      const addFam = () => {
-        const c = nCode.trim().toUpperCase();
-        if (!c || families[c]) return;
-        upd({...state, families: {...families, [c]: {2025:{vk:0,ek:0},2026:{vk:0,ek:0},2027:{vk:0,ek:0},sonder:{vk:0,ek:0,active:false}}}});
-        setNCode("");
-      };
-
-      const delFam = c => { const nf = {...families}; delete nf[c]; upd({...state, families: nf}); };
-
-      const doFile = useCallback(async f => {
-        if (!f) return; setBusy(true); setResult(null);
-        try { setResult(processCSV(await f.text(), families, activeYear)); }
-        catch(e) { setResult({error: e.message}); }
+      // Load today's file
+      const loadToday = async (file) => {
+        setBusy(true);
+        try {
+          const records = await parseFile(file);
+          if (records.length === 0) throw new Error("Keine Datensätze gefunden");
+          
+          const newData = {
+            ...data,
+            today: records,
+            todayName: file.name,
+            todayDate: records[0]?.datum
+          };
+          setData(newData);
+          saveData(newData);
+          
+          // Auto-compare if we have yesterday
+          if (newData.yesterday) {
+            setComparison(compareData(records, newData.yesterday));
+          }
+          
+          setMsg(`✓ ${records.length.toLocaleString()} Artikel geladen`);
+        } catch(e) {
+          setMsg("❌ " + e.message);
+        }
         setBusy(false);
-      }, [families, activeYear]);
-
-      const startE = (k, v) => { setECell(k); setEVal(String(v||0)); };
-      const commitE = (code, grp, field) => {
-        const v = parseFloat(eVal);
-        if (!isNaN(v)) setField(code, grp, field, v);
-        setECell(null); setEVal("");
       };
 
-      const filtered = useMemo(() => {
-        const e = Object.entries(families);
-        return search ? e.filter(([c]) => c.toLowerCase().includes(search.toLowerCase())) : e;
-      }, [families, search]);
+      // Load yesterday's file
+      const loadYesterday = async (file) => {
+        setBusy(true);
+        try {
+          const records = await parseFile(file);
+          if (records.length === 0) throw new Error("Keine Datensätze gefunden");
+          
+          const newData = {
+            ...data,
+            yesterday: records,
+            yesterdayName: file.name,
+            yesterdayDate: records[0]?.datum
+          };
+          setData(newData);
+          saveData(newData);
+          
+          // Auto-compare if we have today
+          if (newData.today) {
+            setComparison(compareData(newData.today, records));
+          }
+          
+          setMsg(`✓ Vergleichsdatei geladen`);
+        } catch(e) {
+          setMsg("❌ " + e.message);
+        }
+        setBusy(false);
+      };
 
-      const cnt = Object.keys(families).length;
-      const tC = {U:{bg:"#1e3a5f",t:"#60a5fa"},C:{bg:"#3b1f0b",t:"#fdba74"},K:{bg:"#1a2e1a",t:"#86efac"},M:{bg:"#3b1f3b",t:"#d8b4fe"},E:{bg:"#3b3b0b",t:"#fde047"}};
-      const yC = {2025:"#94a3b8",2026:"#60a5fa",2027:"#34d399"};
+      // Generate price lists
+      const generatePriceLists = () => {
+        if (!data.today) return;
+        const result = processCSV(data.today, families, activeYear);
+        setPriceResult(result);
+      };
 
-      const renderE = (code, grp, field, val, color) => {
-        const k = `${code}-${grp}-${field}`;
-        if (eCell === k) return (
-          <input autoFocus type="number" step="0.01" value={eVal}
-            onChange={e => setEVal(e.target.value)}
-            onBlur={() => commitE(code,grp,field)}
-            onKeyDown={e => {if(e.key==="Enter")commitE(code,grp,field);if(e.key==="Escape"){setECell(null);setEVal("");}}}
-            style={{background:"#0f172a",border:`1px solid ${color}`,borderRadius:4,padding:"2px 5px",color:"#e2e8f0",fontSize:12,width:65,textAlign:"right"}} />
-        );
-        const empty = !val || val === 0;
+      // Run comparison
+      const runComparison = () => {
+        if (data.today && data.yesterday) {
+          setComparison(compareData(data.today, data.yesterday));
+        }
+      };
+
+      // LOGIN SCREEN
+      if (!loggedIn) {
         return (
-          <span className="cell-e" onClick={() => startE(k, val)}
-            style={{color: empty ? "#334155" : color, fontSize:12}}
-            title="Klicken zum Bearbeiten">
-            {empty ? "—" : val}
-          </span>
+          <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <div className="card" style={{width:340,textAlign:"center"}}>
+              <div style={{background:"linear-gradient(135deg,#f59e0b,#d97706)",borderRadius:12,width:56,height:56,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",fontWeight:800,fontSize:24,color:"#0f172a"}}>R</div>
+              <h1 style={{fontSize:20,marginBottom:4}}>Renault Tool V3</h1>
+              <p style={{fontSize:12,color:"#64748b",marginBottom:20}}>Preislisten & Vergleiche</p>
+              <input value={user} onChange={e => setUser(e.target.value)} placeholder="Benutzer" style={{width:"100%",padding:"10px 14px",marginBottom:10,background:"#1e293b",border:"1px solid #334155",borderRadius:8,color:"#e2e8f0",fontSize:14}} />
+              <input type="password" value={pass} onChange={e => setPass(e.target.value)} placeholder="Passwort" onKeyDown={e => e.key === "Enter" && doLogin()} style={{width:"100%",padding:"10px 14px",marginBottom:16,background:"#1e293b",border:"1px solid #334155",borderRadius:8,color:"#e2e8f0",fontSize:14}} />
+              {loginErr && <p style={{color:"#f87171",fontSize:12,marginBottom:10}}>{loginErr}</p>}
+              <button onClick={doLogin} className="btn btn-primary" style={{width:"100%"}}>Anmelden</button>
+            </div>
+          </div>
         );
-      };
+      }
 
+      // MAIN APP
       return (
         <div>
           {/* Header */}
-          <div style={{background:"rgba(15,23,42,0.92)",backdropFilter:"blur(12px)",borderBottom:"1px solid #1e293b",padding:"10px 20px",position:"sticky",top:0,zIndex:50}}>
-            <div style={{maxWidth:1600,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+          <div style={{background:"rgba(15,23,42,0.95)",backdropFilter:"blur(12px)",borderBottom:"1px solid #1e293b",padding:"10px 20px",position:"sticky",top:0,zIndex:50}}>
+            <div style={{maxWidth:1400,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
                 <div style={{background:"linear-gradient(135deg,#f59e0b,#d97706)",borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,color:"#0f172a"}}>R</div>
                 <div>
-                  <h1 style={{fontSize:16,fontWeight:700,color:"#f8fafc"}}>Renault Preislisten-Tool</h1>
-                  <p style={{fontSize:11,color:"#64748b"}}>Rabatte vergleichen & Preislisten generieren</p>
+                  <h1 style={{fontSize:16,fontWeight:700}}>Renault Preislisten-Tool <span className="badge badge-yellow">V3</span></h1>
+                  <p style={{fontSize:11,color:"#64748b"}}>Automatische Vergleiche & Preislisten</p>
                 </div>
-              </div>
-
-              <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-                <span style={{fontSize:11,color:"#64748b",marginRight:2}}>Kalkulation:</span>
-                <div style={{padding:"5px 14px",borderRadius:8,border:"2px solid #334155",background:"rgba(30,41,59,0.4)",opacity:0.5,display:"inline-flex",alignItems:"center",gap:6,cursor:"not-allowed"}}>
-                  <span style={{fontSize:12,color:"#475569"}}>🔒</span>
-                  <span style={{fontWeight:600,fontSize:13,color:"#475569"}}>2025</span>
-                  <span style={{fontSize:9,color:"#475569"}}>(Referenz)</span>
-                </div>
-                {[2026,2027].map(y => (
-                  <div key={y} className={`year-sel ${activeYear===y?"active":"inactive"}`} onClick={() => setYear(y)}>
-                    <div className={`rdot ${activeYear===y?"checked":""}`}/>
-                    <span style={{fontWeight:600,fontSize:13,color:activeYear===y?"#f59e0b":"#64748b"}}>{y}</span>
-                  </div>
-                ))}
-                <span style={{fontSize:11,color:"#475569",marginLeft:4}}>+ Sonder</span>
               </div>
 
               <div style={{display:"flex",gap:3,background:"#1e293b",borderRadius:8,padding:3}}>
-                {[{id:"upload",l:"📄 Preisliste"},{id:"admin",l:"⚙️ Rabatte"}].map(t => (
-                  <button key={t.id} onClick={() => setTab(t.id)} style={{
-                    padding:"7px 18px",borderRadius:7,border:"none",cursor:"pointer",fontSize:13,fontWeight:500,
-                    background:tab===t.id?"linear-gradient(135deg,#f59e0b,#d97706)":"transparent",
-                    color:tab===t.id?"#0f172a":"#94a3b8"
-                  }}>{t.l}</button>
+                {[
+                  {id:"dashboard",l:"📊 Dashboard"},
+                  {id:"compare",l:"🔄 Vergleich"},
+                  {id:"pricelist",l:"📄 Preisliste"},
+                  {id:"settings",l:"⚙️ Rabatte"}
+                ].map(t => (
+                  <button key={t.id} onClick={() => setTab(t.id)} className={`tab-btn ${tab===t.id?"active":""}`}>{t.l}</button>
                 ))}
               </div>
+
+              <button onClick={logout} style={{background:"#334155",border:"none",padding:"6px 12px",borderRadius:6,color:"#94a3b8",fontSize:11,cursor:"pointer"}}>Abmelden</button>
             </div>
           </div>
 
-          <div style={{maxWidth:1600,margin:"0 auto",padding:"20px"}}>
+          <div style={{maxWidth:1400,margin:"0 auto",padding:"20px"}}>
+            {msg && <div style={{background:"rgba(16,185,129,0.1)",border:"1px solid #10b981",borderRadius:8,padding:"10px 16px",marginBottom:16,color:"#6ee7b7",fontSize:13}}>{msg}</div>}
 
-            {/* UPLOAD */}
-            {tab==="upload" && (
-              <div style={{maxWidth:900,margin:"0 auto",animation:"fadeIn 0.3s ease"}}>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:10,marginBottom:20}}>
-                  {[{l:"Kalkulation",v:activeYear,c:"#f59e0b"},{l:"Familien",v:cnt,c:"#3b82f6"},{l:"DLNR",v:DLNR,c:"#10b981"}].map((s,i) => (
-                    <div key={i} style={{background:"rgba(30,41,59,0.6)",border:"1px solid #334155",borderRadius:10,padding:"14px 18px"}}>
-                      <p style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:1,marginBottom:3}}>{s.l}</p>
-                      <p style={{fontSize:22,fontWeight:700,color:s.c}}>{s.v}</p>
+            {/* DASHBOARD */}
+            {tab === "dashboard" && (
+              <div style={{animation:"fadeIn 0.3s"}}>
+                <h2 style={{fontSize:20,marginBottom:16}}>Dashboard</h2>
+                
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:16,marginBottom:24}}>
+                  <div className="card">
+                    <p style={{fontSize:11,color:"#64748b",marginBottom:4}}>AKTUELLE DATEI</p>
+                    <p style={{fontSize:18,fontWeight:700,color:"#60a5fa"}}>{data.todayName || "Nicht geladen"}</p>
+                    {data.todayDate && <p style={{fontSize:11,color:"#64748b"}}>Stand: {formatDate(data.todayDate)}</p>}
+                    {data.today && <p style={{fontSize:12,color:"#94a3b8"}}>{data.today.length.toLocaleString()} Artikel</p>}
+                  </div>
+                  <div className="card">
+                    <p style={{fontSize:11,color:"#64748b",marginBottom:4}}>VERGLEICHSDATEI</p>
+                    <p style={{fontSize:18,fontWeight:700,color:"#a78bfa"}}>{data.yesterdayName || "Nicht geladen"}</p>
+                    {data.yesterdayDate && <p style={{fontSize:11,color:"#64748b"}}>Stand: {formatDate(data.yesterdayDate)}</p>}
+                    {data.yesterday && <p style={{fontSize:12,color:"#94a3b8"}}>{data.yesterday.length.toLocaleString()} Artikel</p>}
+                  </div>
+                  <div className="card">
+                    <p style={{fontSize:11,color:"#64748b",marginBottom:4}}>FAMILIEN</p>
+                    <p style={{fontSize:18,fontWeight:700,color:"#fbbf24"}}>{Object.keys(families).length}</p>
+                    <p style={{fontSize:12,color:"#94a3b8"}}>Kalkulation: {activeYear}</p>
+                  </div>
+                </div>
+
+                <div className="card" style={{marginBottom:24}}>
+                  <h3 style={{fontSize:14,marginBottom:12}}>Dateien laden</h3>
+                  <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                    <div>
+                      <input ref={fRef} type="file" style={{display:"none"}} onChange={e => e.target.files[0] && loadToday(e.target.files[0])} />
+                      <button onClick={() => fRef.current?.click()} className="btn btn-primary" disabled={busy}>
+                        {busy ? "⏳" : "📁"} Aktuelle Datei laden
+                      </button>
                     </div>
-                  ))}
+                    <div>
+                      <input ref={fRef2} type="file" style={{display:"none"}} onChange={e => e.target.files[0] && loadYesterday(e.target.files[0])} />
+                      <button onClick={() => fRef2.current?.click()} className="btn btn-secondary" disabled={busy}>
+                        📁 Vergleichsdatei laden
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                <div style={{background:"rgba(59,130,246,0.08)",border:"1px solid rgba(59,130,246,0.2)",borderRadius:8,padding:"8px 14px",marginBottom:16,fontSize:12,color:"#93c5fd"}}>
-                  ℹ️ Kalkulation nutzt <strong>{activeYear}</strong>. Familien mit aktiven <strong>Sonderrabatten</strong> werden bevorzugt.
+                {comparison && (
+                  <div className="card">
+                    <h3 style={{fontSize:14,marginBottom:12}}>Schnellübersicht Änderungen</h3>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12}}>
+                      <div style={{background:"#1e293b",padding:12,borderRadius:8,textAlign:"center"}}>
+                        <p style={{fontSize:24,fontWeight:700,color:"#60a5fa"}}>{comparison.newArticles.length}</p>
+                        <p style={{fontSize:11,color:"#64748b"}}>Neue Artikel</p>
+                      </div>
+                      <div style={{background:"#1e293b",padding:12,borderRadius:8,textAlign:"center"}}>
+                        <p style={{fontSize:24,fontWeight:700,color:"#fb923c"}}>{comparison.deletedArticles.length}</p>
+                        <p style={{fontSize:11,color:"#64748b"}}>Gelöschte Artikel</p>
+                      </div>
+                      <div style={{background:"#1e293b",padding:12,borderRadius:8,textAlign:"center"}}>
+                        <p style={{fontSize:24,fontWeight:700,color:"#f87171"}}>{comparison.priceChanges.length}</p>
+                        <p style={{fontSize:11,color:"#64748b"}}>Preisänderungen</p>
+                      </div>
+                      <div style={{background:"#1e293b",padding:12,borderRadius:8,textAlign:"center"}}>
+                        <p style={{fontSize:24,fontWeight:700,color:"#a78bfa"}}>{comparison.familyChanges.length}</p>
+                        <p style={{fontSize:11,color:"#64748b"}}>Familienänderungen</p>
+                      </div>
+                      <div style={{background:"#1e293b",padding:12,borderRadius:8,textAlign:"center"}}>
+                        <p style={{fontSize:24,fontWeight:700,color:"#fbbf24"}}>{comparison.statusChanges.length}</p>
+                        <p style={{fontSize:11,color:"#64748b"}}>Statusänderungen</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* COMPARE TAB */}
+            {tab === "compare" && (
+              <div style={{animation:"fadeIn 0.3s"}}>
+                <h2 style={{fontSize:20,marginBottom:16}}>Vergleich</h2>
+                
+                {!comparison && (
+                  <div className="card" style={{textAlign:"center",padding:40}}>
+                    <p style={{fontSize:32,marginBottom:12}}>📊</p>
+                    <p style={{color:"#94a3b8"}}>Lade zwei Dateien im Dashboard um den Vergleich zu starten</p>
+                  </div>
+                )}
+
+                {comparison && (
+                  <>
+                    {/* Preisänderungen */}
+                    <div className="card" style={{marginBottom:16}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                        <h3 style={{fontSize:14}}>💰 Preisänderungen ({comparison.priceChanges.length})</h3>
+                        {comparison.priceChanges.length > 0 && (
+                          <button onClick={() => {
+                            const csv = "Teilenummer;Bezeichnung;Alter Preis;Neuer Preis;Differenz;Differenz %\n" +
+                              comparison.priceChanges.map(p => `${p.teilenr};${p.bez1};${(p.oldPrice/100).toFixed(2)};${(p.newPrice/100).toFixed(2)};${(p.diff/100).toFixed(2)};${p.diffPct}%`).join("\n");
+                            dl(csv, "preisaenderungen.csv");
+                          }} className="btn btn-secondary" style={{padding:"4px 10px",fontSize:11}}>⬇️ Export</button>
+                        )}
+                      </div>
+                      {comparison.priceChanges.length === 0 ? (
+                        <p style={{color:"#64748b",fontSize:13}}>Keine Preisänderungen</p>
+                      ) : (
+                        <div style={{maxHeight:300,overflow:"auto"}}>
+                          <table>
+                            <thead><tr><th>Teilenr.</th><th>Bezeichnung</th><th>Alter Preis</th><th>Neuer Preis</th><th>Diff</th></tr></thead>
+                            <tbody>
+                              {comparison.priceChanges.slice(0, 100).map((p, i) => (
+                                <tr key={i}>
+                                  <td style={{fontFamily:"monospace"}}>{p.teilenr}</td>
+                                  <td>{p.bez1}</td>
+                                  <td>{formatPrice(p.oldPrice)}</td>
+                                  <td>{formatPrice(p.newPrice)}</td>
+                                  <td className={p.diff > 0 ? "change-up" : "change-down"}>
+                                    {p.diff > 0 ? "+" : ""}{formatPrice(p.diff)} ({p.diffPct}%)
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          {comparison.priceChanges.length > 100 && <p style={{padding:10,color:"#64748b",fontSize:12}}>... und {comparison.priceChanges.length - 100} weitere</p>}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Neue Artikel */}
+                    <div className="card" style={{marginBottom:16}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                        <h3 style={{fontSize:14}}>🆕 Neue Artikel ({comparison.newArticles.length})</h3>
+                        {comparison.newArticles.length > 0 && (
+                          <button onClick={() => {
+                            const csv = "Teilenummer;Bezeichnung;Preis;Familie;Status;Ersatz-Nr\n" +
+                              comparison.newArticles.map(a => `${a.teilenr};${a.bez1};${(a.upeCent/100).toFixed(2)};${a.familie};${TEILE_CODE[a.teileCode]||""};${a.austauschNr}`).join("\n");
+                            dl(csv, "neue_artikel.csv");
+                          }} className="btn btn-secondary" style={{padding:"4px 10px",fontSize:11}}>⬇️ Export</button>
+                        )}
+                      </div>
+                      {comparison.newArticles.length === 0 ? (
+                        <p style={{color:"#64748b",fontSize:13}}>Keine neuen Artikel</p>
+                      ) : (
+                        <div style={{maxHeight:300,overflow:"auto"}}>
+                          <table>
+                            <thead><tr><th>Teilenr.</th><th>Bezeichnung</th><th>Preis</th><th>Familie</th><th>Status</th></tr></thead>
+                            <tbody>
+                              {comparison.newArticles.slice(0, 100).map((a, i) => (
+                                <tr key={i}>
+                                  <td style={{fontFamily:"monospace"}}>{a.teilenr}</td>
+                                  <td>{a.bez1}</td>
+                                  <td>{formatPrice(a.upeCent)}</td>
+                                  <td><span className="badge badge-blue">{a.familie}</span></td>
+                                  <td>
+                                    {a.teileCode && a.teileCode !== " " && (
+                                      <span className="badge badge-yellow">
+                                        {TEILE_CODE[a.teileCode]} {a.austauschNr && `→ ${a.austauschNr}`}
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          {comparison.newArticles.length > 100 && <p style={{padding:10,color:"#64748b",fontSize:12}}>... und {comparison.newArticles.length - 100} weitere</p>}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Statusänderungen */}
+                    <div className="card" style={{marginBottom:16}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                        <h3 style={{fontSize:14}}>🔄 Statusänderungen ({comparison.statusChanges.length})</h3>
+                        {comparison.statusChanges.length > 0 && (
+                          <button onClick={() => {
+                            const csv = "Teilenummer;Bezeichnung;Alter Status;Neuer Status;Ersatz-Nr\n" +
+                              comparison.statusChanges.map(s => `${s.teilenr};${s.bez1};${s.oldStatusText};${s.newStatusText};${s.austauschNr}`).join("\n");
+                            dl(csv, "statusaenderungen.csv");
+                          }} className="btn btn-secondary" style={{padding:"4px 10px",fontSize:11}}>⬇️ Export</button>
+                        )}
+                      </div>
+                      {comparison.statusChanges.length === 0 ? (
+                        <p style={{color:"#64748b",fontSize:13}}>Keine Statusänderungen</p>
+                      ) : (
+                        <div style={{maxHeight:300,overflow:"auto"}}>
+                          <table>
+                            <thead><tr><th>Teilenr.</th><th>Bezeichnung</th><th>Alter Status</th><th>Neuer Status</th><th>Ersatz-Nr.</th></tr></thead>
+                            <tbody>
+                              {comparison.statusChanges.slice(0, 100).map((s, i) => (
+                                <tr key={i}>
+                                  <td style={{fontFamily:"monospace"}}>{s.teilenr}</td>
+                                  <td>{s.bez1}</td>
+                                  <td>{s.oldStatusText}</td>
+                                  <td><span className="badge badge-yellow">{s.newStatusText}</span></td>
+                                  <td style={{fontFamily:"monospace"}}>{s.austauschNr}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Familienänderungen */}
+                    <div className="card" style={{marginBottom:16}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                        <h3 style={{fontSize:14}}>👨‍👩‍👧 Familienänderungen ({comparison.familyChanges.length})</h3>
+                        {comparison.familyChanges.length > 0 && (
+                          <button onClick={() => {
+                            const csv = "Teilenummer;Bezeichnung;Alte Familie;Neue Familie\n" +
+                              comparison.familyChanges.map(f => `${f.teilenr};${f.bez1};${f.oldFamily};${f.newFamily}`).join("\n");
+                            dl(csv, "familienaenderungen.csv");
+                          }} className="btn btn-secondary" style={{padding:"4px 10px",fontSize:11}}>⬇️ Export</button>
+                        )}
+                      </div>
+                      {comparison.familyChanges.length === 0 ? (
+                        <p style={{color:"#64748b",fontSize:13}}>Keine Familienänderungen</p>
+                      ) : (
+                        <div style={{maxHeight:300,overflow:"auto"}}>
+                          <table>
+                            <thead><tr><th>Teilenr.</th><th>Bezeichnung</th><th>Alte Familie</th><th>Neue Familie</th></tr></thead>
+                            <tbody>
+                              {comparison.familyChanges.slice(0, 100).map((f, i) => (
+                                <tr key={i}>
+                                  <td style={{fontFamily:"monospace"}}>{f.teilenr}</td>
+                                  <td>{f.bez1}</td>
+                                  <td><span className="badge badge-blue">{f.oldFamily}</span></td>
+                                  <td><span className="badge badge-green">{f.newFamily}</span></td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Gelöschte Artikel */}
+                    <div className="card">
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                        <h3 style={{fontSize:14}}>🗑️ Gelöschte Artikel ({comparison.deletedArticles.length})</h3>
+                        {comparison.deletedArticles.length > 0 && (
+                          <button onClick={() => {
+                            const csv = "Teilenummer;Bezeichnung;Preis;Familie\n" +
+                              comparison.deletedArticles.map(a => `${a.teilenr};${a.bez1};${(a.upeCent/100).toFixed(2)};${a.familie}`).join("\n");
+                            dl(csv, "geloeschte_artikel.csv");
+                          }} className="btn btn-secondary" style={{padding:"4px 10px",fontSize:11}}>⬇️ Export</button>
+                        )}
+                      </div>
+                      {comparison.deletedArticles.length === 0 ? (
+                        <p style={{color:"#64748b",fontSize:13}}>Keine gelöschten Artikel</p>
+                      ) : (
+                        <div style={{maxHeight:300,overflow:"auto"}}>
+                          <table>
+                            <thead><tr><th>Teilenr.</th><th>Bezeichnung</th><th>Letzter Preis</th><th>Familie</th></tr></thead>
+                            <tbody>
+                              {comparison.deletedArticles.slice(0, 100).map((a, i) => (
+                                <tr key={i}>
+                                  <td style={{fontFamily:"monospace",color:"#fb923c"}}>{a.teilenr}</td>
+                                  <td>{a.bez1}</td>
+                                  <td>{formatPrice(a.upeCent)}</td>
+                                  <td><span className="badge badge-blue">{a.familie}</span></td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          {comparison.deletedArticles.length > 100 && <p style={{padding:10,color:"#64748b",fontSize:12}}>... und {comparison.deletedArticles.length - 100} weitere</p>}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* PRICELIST TAB */}
+            {tab === "pricelist" && (
+              <div style={{animation:"fadeIn 0.3s"}}>
+                <h2 style={{fontSize:20,marginBottom:16}}>Preisliste generieren</h2>
+                
+                <div className="card" style={{marginBottom:20}}>
+                  <div style={{display:"flex",gap:16,alignItems:"center",flexWrap:"wrap"}}>
+                    <div>
+                      <p style={{fontSize:12,color:"#64748b"}}>Aktuelle Datei</p>
+                      <p style={{fontWeight:600}}>{data.todayName || "Nicht geladen"}</p>
+                    </div>
+                    <div>
+                      <p style={{fontSize:12,color:"#64748b"}}>Kalkulation</p>
+                      <p style={{fontWeight:600,color:"#fbbf24"}}>{activeYear}</p>
+                    </div>
+                    <div>
+                      <p style={{fontSize:12,color:"#64748b"}}>Familien</p>
+                      <p style={{fontWeight:600}}>{Object.keys(families).length}</p>
+                    </div>
+                    <button onClick={generatePriceLists} disabled={!data.today} className="btn btn-primary">
+                      Preislisten erstellen
+                    </button>
+                  </div>
                 </div>
 
-                <div onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)}
-                  onDrop={e=>{e.preventDefault();setDrag(false);doFile(e.dataTransfer.files[0]);}}
-                  onClick={()=>fRef.current?.click()}
-                  style={{border:`2px dashed ${drag?"#f59e0b":"#334155"}`,borderRadius:14,padding:"50px 24px",textAlign:"center",cursor:"pointer",
-                    background:drag?"rgba(245,158,11,0.05)":"rgba(30,41,59,0.3)",marginBottom:20,transition:"all 0.3s"}}>
-                  <input ref={fRef} type="file" style={{display:"none"}} onChange={e=>doFile(e.target.files[0])} />
-                  <div style={{fontSize:44,marginBottom:10}}>{busy?"⏳":"📁"}</div>
-                  <p style={{fontSize:16,fontWeight:600,marginBottom:4}}>{busy?"Verarbeite...":"Renault Preisdatei hier ablegen"}</p>
-                  <p style={{fontSize:13,color:"#64748b"}}>CSV oder TLDRAGP-Datei • Drag & Drop oder klicken</p>
-                </div>
-
-                {busy && <div style={{textAlign:"center",marginBottom:20}}>
-                  <div style={{width:32,height:32,border:"3px solid #334155",borderTop:"3px solid #f59e0b",borderRadius:"50%",animation:"spin 1s linear infinite",margin:"0 auto"}}/>
-                </div>}
-
-                {result && !result.error && (
-                  <div style={{background:"rgba(30,41,59,0.6)",border:"1px solid #334155",borderRadius:14,padding:24,animation:"fadeIn 0.4s"}}>
+                {priceResult && (
+                  <div className="card" style={{animation:"fadeIn 0.3s"}}>
                     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
                       <span style={{fontSize:24}}>✅</span>
                       <div>
                         <h3 style={{fontSize:16,fontWeight:600}}>Preislisten erstellt!</h3>
-                        <p style={{fontSize:12,color:"#64748b"}}>{result.ok.toLocaleString()} verarbeitet • {result.skip.toLocaleString()} ohne Familie • {result.noD.toLocaleString()} ohne Rabatt</p>
+                        <p style={{fontSize:12,color:"#64748b"}}>
+                          {priceResult.ok.toLocaleString()} verarbeitet • 
+                          {priceResult.skip.toLocaleString()} ohne Familie • 
+                          {priceResult.noD.toLocaleString()} ohne Rabatt
+                        </p>
                       </div>
                     </div>
+                    
                     <div style={{background:"#1e293b",borderRadius:6,height:5,marginBottom:16,overflow:"hidden"}}>
-                      <div style={{background:"linear-gradient(90deg,#10b981,#059669)",height:"100%",width:`${(result.ok/result.total)*100}%`,borderRadius:6}}/>
+                      <div style={{background:"linear-gradient(90deg,#10b981,#059669)",height:"100%",width:`${(priceResult.ok/priceResult.total)*100}%`,borderRadius:6}}/>
                     </div>
+                    
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
                       <div style={{background:"#1e293b",borderRadius:10,padding:18,border:"1px solid #334155"}}>
-                        <span style={{background:"#1e40af",borderRadius:5,padding:"2px 8px",fontSize:10,fontWeight:600,color:"#93c5fd"}}>KUNDE</span>
+                        <span className="badge badge-blue">KUNDE</span>
                         <h4 style={{margin:"8px 0 3px",fontSize:14,fontWeight:600}}>Preisdatei Renault.csv</h4>
                         <p style={{fontSize:11,color:"#64748b",marginBottom:12}}>Artikel, Listenpreis, Kundenpreis</p>
-                        <button onClick={()=>dl(result.defCSV,"Preisdatei Renault.csv")} style={{
-                          background:"linear-gradient(135deg,#3b82f6,#2563eb)",color:"white",border:"none",borderRadius:7,
-                          padding:"9px 14px",fontSize:13,fontWeight:600,cursor:"pointer",width:"100%"}}>⬇️ Herunterladen</button>
+                        <button onClick={() => dl(priceResult.defCSV, "Preisdatei Renault.csv")} className="btn btn-primary" style={{width:"100%"}}>⬇️ Herunterladen</button>
                       </div>
                       <div style={{background:"#1e293b",borderRadius:10,padding:18,border:"1px solid #334155"}}>
-                        <span style={{background:"#7c2d12",borderRadius:5,padding:"2px 8px",fontSize:10,fontWeight:600,color:"#fdba74"}}>CSS</span>
+                        <span className="badge badge-yellow">CSS</span>
                         <h4 style={{margin:"8px 0 3px",fontSize:14,fontWeight:600}}>Preisliste css Renault.csv</h4>
                         <p style={{fontSize:11,color:"#64748b",marginBottom:12}}>Inkl. EK, Rabatte, Beschreibung, Gewicht</p>
-                        <button onClick={()=>dl(result.extCSV,"Preisliste css Renault.csv")} style={{
-                          background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#0f172a",border:"none",borderRadius:7,
-                          padding:"9px 14px",fontSize:13,fontWeight:600,cursor:"pointer",width:"100%"}}>⬇️ Herunterladen</button>
+                        <button onClick={() => dl(priceResult.extCSV, "Preisliste css Renault.csv")} className="btn btn-primary" style={{width:"100%"}}>⬇️ Herunterladen</button>
                       </div>
                     </div>
-                  </div>
-                )}
-                {result && result.error && (
-                  <div style={{background:"rgba(127,29,29,0.3)",border:"1px solid #991b1b",borderRadius:10,padding:16,color:"#fca5a5",fontSize:14}}>
-                    <strong>Fehler:</strong> {result.error}
                   </div>
                 )}
               </div>
             )}
 
-            {/* ADMIN */}
-            {tab==="admin" && (
-              <div style={{animation:"fadeIn 0.3s ease"}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:10}}>
+            {/* SETTINGS TAB */}
+            {tab === "settings" && (
+              <div style={{animation:"fadeIn 0.3s"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
                   <div>
-                    <h2 style={{fontSize:18,fontWeight:700}}>Rabatte verwalten</h2>
-                    <p style={{fontSize:12,color:"#64748b",marginTop:2}}>
-                      {cnt} Familien • Aktiv: <strong style={{color:"#f59e0b"}}>{activeYear}</strong>
-                      {msg && <span style={{marginLeft:10,color:"#10b981",fontWeight:600}}>{msg}</span>}
-                    </p>
+                    <h2 style={{fontSize:20}}>Rabatte verwalten</h2>
+                    <p style={{fontSize:12,color:"#64748b"}}>{Object.keys(families).length} Familien • Kalkulation: {activeYear}</p>
                   </div>
-                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                    <button onClick={()=>{dl(JSON.stringify(state,null,2),"rabatte-backup.json");}}
-                      style={{background:"#1e293b",color:"#94a3b8",border:"1px solid #334155",borderRadius:7,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>💾 Backup</button>
-                    <label style={{background:"#1e293b",color:"#94a3b8",border:"1px solid #334155",borderRadius:7,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>
-                      📂 Import
-                      <input type="file" accept=".json" style={{display:"none"}} onChange={async e=>{
-                        const f=e.target.files[0]; if(!f) return;
-                        try{upd(JSON.parse(await f.text()));}catch(err){alert("Ungültige Datei");}
-                      }}/>
-                    </label>
-                    <button onClick={()=>upd(mkDefault())}
-                      style={{background:"#7f1d1d",color:"#fca5a5",border:"1px solid #991b1b",borderRadius:7,padding:"6px 12px",fontSize:11,cursor:"pointer"}}>🔄 Reset</button>
+                  <div style={{display:"flex",gap:8}}>
+                    <select value={activeYear} onChange={e => updSettings({...settings, activeYear: parseInt(e.target.value)})} style={{background:"#1e293b",border:"1px solid #334155",borderRadius:6,padding:"6px 12px",color:"#e2e8f0"}}>
+                      {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                    <button onClick={() => dl(JSON.stringify(settings, null, 2), "rabatte-backup.json")} className="btn btn-secondary" style={{padding:"6px 12px",fontSize:11}}>💾 Backup</button>
                   </div>
                 </div>
 
-                <div style={{display:"flex",gap:10,marginBottom:12,flexWrap:"wrap"}}>
-                  <div style={{position:"relative",flex:"1 1 220px"}}>
-                    <span style={{position:"absolute",left:9,top:"50%",transform:"translateY(-50%)",fontSize:14}}>🔍</span>
-                    <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Familie suchen..."
-                      style={{background:"rgba(30,41,59,0.6)",border:"1px solid #334155",borderRadius:7,padding:"7px 7px 7px 32px",color:"#e2e8f0",fontSize:12,width:"100%"}}/>
-                  </div>
-                  <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                    <input value={nCode} onChange={e=>setNCode(e.target.value)} placeholder="Neuer Code" onKeyDown={e=>e.key==="Enter"&&addFam()}
-                      style={{background:"#0f172a",border:"1px solid #334155",borderRadius:7,padding:"7px 10px",color:"#e2e8f0",fontSize:12,width:120}}/>
-                    <button onClick={addFam} style={{background:"linear-gradient(135deg,#10b981,#059669)",color:"white",border:"none",borderRadius:7,padding:"7px 14px",fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>+ Neu</button>
-                  </div>
-                </div>
-
-                <div style={{background:"rgba(30,41,59,0.4)",borderRadius:6,padding:"6px 14px",marginBottom:10,display:"flex",gap:16,flexWrap:"wrap",fontSize:11,color:"#64748b",alignItems:"center"}}>
-                  <span>💡 Klicke auf Werte zum Ändern</span>
-                  <span style={{color:"#334155"}}>|</span>
-                  {YEARS.map(y=><span key={y} style={{color:yC[y]}}>● {y}</span>)}
-                  <span style={{color:"#f472b6"}}>● Sonder</span>
-                  <span style={{color:"#334155"}}>|</span>
-                  <span>VK = Kundenrabatt • EK = Eigenrabatt</span>
-                  <span style={{color:"#334155"}}>|</span>
-                  <span>⭐ = Aktives Jahr</span>
-                </div>
-
-                <div style={{background:"rgba(30,41,59,0.6)",border:"1px solid #334155",borderRadius:10,overflow:"hidden"}}>
-                  <div style={{overflowX:"auto",maxHeight:"65vh",overflowY:"auto"}}>
-                    <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,minWidth:1050}}>
+                <div className="card">
+                  <div style={{maxHeight:500,overflow:"auto"}}>
+                    <table>
                       <thead>
-                        <tr style={{background:"#0f172a",position:"sticky",top:0,zIndex:20}}>
-                          <th rowSpan="2" style={{padding:"7px 10px",textAlign:"left",borderBottom:"1px solid #334155",color:"#64748b",fontSize:10,textTransform:"uppercase",letterSpacing:0.8,verticalAlign:"bottom",position:"sticky",left:0,background:"#0f172a",zIndex:21}}>Code</th>
-                          <th rowSpan="2" style={{padding:"7px 6px",textAlign:"center",borderBottom:"1px solid #334155",color:"#64748b",fontSize:10,verticalAlign:"bottom"}}>Typ</th>
-                          {YEARS.map(y=>(
-                            <th key={y} colSpan="2" style={{padding:"5px 6px",textAlign:"center",borderBottom:"1px solid #1e293b",
-                              color:yC[y],fontSize:11,fontWeight:700,
-                              background:activeYear===y?"rgba(245,158,11,0.08)":"transparent"}}>
-                              {y} {activeYear===y&&"⭐"}
-                            </th>
-                          ))}
-                          <th colSpan="3" style={{padding:"5px 6px",textAlign:"center",borderBottom:"1px solid #1e293b",color:"#f472b6",fontSize:11,fontWeight:700,background:"rgba(244,114,182,0.04)"}}>
-                            Sonderrabatte
-                          </th>
-                          <th rowSpan="2" style={{padding:"7px 6px",textAlign:"center",borderBottom:"1px solid #334155",color:"#64748b",fontSize:10,verticalAlign:"bottom",width:48}}>Marge</th>
-                          <th rowSpan="2" style={{padding:"7px 6px",textAlign:"center",borderBottom:"1px solid #334155",color:"#64748b",fontSize:10,verticalAlign:"bottom",width:40}}>Quelle</th>
-                          <th rowSpan="2" style={{width:32,borderBottom:"1px solid #334155"}}/>
-                        </tr>
-                        <tr style={{background:"#0f172a",position:"sticky",top:0,zIndex:19}}>
-                          {YEARS.map(y=>(
-                            <React.Fragment key={y}>
-                              <th style={{padding:"3px 6px",textAlign:"right",borderBottom:"1px solid #334155",color:yC[y],fontSize:9,fontWeight:600,opacity:0.7,
-                                background:activeYear===y?"rgba(245,158,11,0.08)":"transparent"}}>VK%</th>
-                              <th style={{padding:"3px 6px",textAlign:"right",borderBottom:"1px solid #334155",color:yC[y],fontSize:9,fontWeight:600,opacity:0.7,
-                                background:activeYear===y?"rgba(245,158,11,0.08)":"transparent"}}>EK%</th>
-                            </React.Fragment>
-                          ))}
-                          <th style={{padding:"3px 6px",textAlign:"right",borderBottom:"1px solid #334155",color:"#f472b6",fontSize:9,fontWeight:600,opacity:0.7,background:"rgba(244,114,182,0.04)"}}>VK%</th>
-                          <th style={{padding:"3px 6px",textAlign:"right",borderBottom:"1px solid #334155",color:"#f472b6",fontSize:9,fontWeight:600,opacity:0.7,background:"rgba(244,114,182,0.04)"}}>EK%</th>
-                          <th style={{padding:"3px 6px",textAlign:"center",borderBottom:"1px solid #334155",color:"#f472b6",fontSize:9,fontWeight:600,opacity:0.7,background:"rgba(244,114,182,0.04)"}}>Aktiv</th>
+                        <tr>
+                          <th>Familie</th>
+                          <th>2025 VK%</th>
+                          <th>2025 EK%</th>
+                          <th>2026 VK%</th>
+                          <th>2026 EK%</th>
+                          <th>2027 VK%</th>
+                          <th>2027 EK%</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filtered.sort(([a],[b])=>a.localeCompare(b)).map(([code,fam],i)=>{
-                          const suf = code.slice(-1);
-                          const tc = tC[suf]||{bg:"#334155",t:"#94a3b8"};
-                          const disc = getDisc(fam, activeYear);
-                          const marge = disc ? (disc.ek-disc.vk).toFixed(2) : null;
-
-                          return (
-                            <tr key={code} style={{borderBottom:"1px solid #1e293b",background:i%2===0?"transparent":"rgba(15,23,42,0.3)"}}>
-                              <td style={{padding:"7px 10px",fontWeight:600,fontFamily:"monospace",fontSize:13,position:"sticky",left:0,background:i%2===0?"#1e293b":"#172033",zIndex:5}}>{code}</td>
-                              <td style={{textAlign:"center",padding:"7px 4px"}}>
-                                <span style={{background:tc.bg,color:tc.t,borderRadius:4,padding:"1px 7px",fontSize:10,fontWeight:600}}>{suf}</span>
-                              </td>
-                              {YEARS.map(y=>(
-                                <React.Fragment key={y}>
-                                  <td style={{textAlign:"right",padding:"5px 6px",background:activeYear===y?"rgba(245,158,11,0.04)":"transparent"}}>
-                                    {renderE(code,y,"vk",fam[y]?.vk,yC[y])}
-                                  </td>
-                                  <td style={{textAlign:"right",padding:"5px 6px",background:activeYear===y?"rgba(245,158,11,0.04)":"transparent"}}>
-                                    {renderE(code,y,"ek",fam[y]?.ek,yC[y])}
-                                  </td>
-                                </React.Fragment>
-                              ))}
-                              <td style={{textAlign:"right",padding:"5px 6px",background:"rgba(244,114,182,0.04)"}}>
-                                {renderE(code,"sonder","vk",fam.sonder?.vk,"#f472b6")}
-                              </td>
-                              <td style={{textAlign:"right",padding:"5px 6px",background:"rgba(244,114,182,0.04)"}}>
-                                {renderE(code,"sonder","ek",fam.sonder?.ek,"#f472b6")}
-                              </td>
-                              <td style={{textAlign:"center",padding:"5px 6px",background:"rgba(244,114,182,0.04)"}}>
-                                <Toggle on={fam.sonder?.active||false} onToggle={()=>togSonder(code)}/>
-                              </td>
-                              <td style={{textAlign:"right",padding:"5px 6px",fontSize:11,fontVariantNumeric:"tabular-nums",
-                                color:marge!==null?(parseFloat(marge)>=0?"#10b981":"#ef4444"):"#334155"}}>
-                                {marge!==null?(parseFloat(marge)>0?"+":"")+marge:"—"}
-                              </td>
-                              <td style={{textAlign:"center",padding:"5px 4px"}}>
-                                {disc ? (
-                                  <span style={{fontSize:9,padding:"1px 6px",borderRadius:4,fontWeight:600,
-                                    background:disc.src==="Sonder"?"rgba(244,114,182,0.15)":"rgba(245,158,11,0.1)",
-                                    color:disc.src==="Sonder"?"#f472b6":"#f59e0b"}}>{disc.src}</span>
-                                ) : <span style={{color:"#334155",fontSize:10}}>—</span>}
-                              </td>
-                              <td style={{textAlign:"center",padding:"5px 3px"}}>
-                                <button onClick={()=>delFam(code)}
-                                  style={{background:"transparent",border:"none",color:"#475569",cursor:"pointer",padding:1,fontSize:12}}
-                                  onMouseEnter={e=>e.target.style.color="#ef4444"} onMouseLeave={e=>e.target.style.color="#475569"}>🗑️</button>
-                              </td>
-                            </tr>
-                          );
-                        })}
+                        {Object.entries(families).map(([code, fam]) => (
+                          <tr key={code}>
+                            <td><span className="badge badge-blue">{code}</span></td>
+                            <td>{fam[2025]?.vk || 0}</td>
+                            <td>{fam[2025]?.ek || 0}</td>
+                            <td style={{color: activeYear === 2026 ? "#fbbf24" : "inherit"}}>{fam[2026]?.vk || 0}</td>
+                            <td style={{color: activeYear === 2026 ? "#fbbf24" : "inherit"}}>{fam[2026]?.ek || 0}</td>
+                            <td style={{color: activeYear === 2027 ? "#fbbf24" : "inherit"}}>{fam[2027]?.vk || 0}</td>
+                            <td style={{color: activeYear === 2027 ? "#fbbf24" : "inherit"}}>{fam[2027]?.ek || 0}</td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
-                  {filtered.length===0 && <div style={{textAlign:"center",padding:32,color:"#475569"}}>Keine Familien gefunden</div>}
                 </div>
-                <p style={{fontSize:10,color:"#475569",marginTop:8,textAlign:"center"}}>
-                  ⭐ = aktives Kalkulationsjahr • Sonderrabatte überschreiben Jahresrabatte wenn aktiviert • "—" = kein Wert hinterlegt, klicken zum Eintragen
-                </p>
               </div>
             )}
+
           </div>
         </div>
       );
     }
 
-    // Login Component
-    function Login({ onLogin }) {
-      const [user, setUser] = useState("");
-      const [pass, setPass] = useState("");
-      const [error, setError] = useState("");
-
-      const handleSubmit = (e) => {
-        e.preventDefault();
-        if (user === AUTH_USER && pass === AUTH_PASS) {
-          sessionStorage.setItem(AUTH_KEY, "1");
-          onLogin();
-        } else {
-          setError("Ungültige Zugangsdaten");
-          setTimeout(() => setError(""), 3000);
-        }
-      };
-
-      return (
-        <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:"rgba(30,41,59,0.8)",border:"1px solid #334155",borderRadius:16,padding:40,width:"100%",maxWidth:380,animation:"fadeIn 0.4s"}}>
-            <div style={{textAlign:"center",marginBottom:30}}>
-              <div style={{background:"linear-gradient(135deg,#f59e0b,#d97706)",borderRadius:14,width:56,height:56,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:24,color:"#0f172a",margin:"0 auto 16px"}}>R</div>
-              <h1 style={{fontSize:20,fontWeight:700,color:"#f8fafc",marginBottom:6}}>Renault Preislisten-Tool</h1>
-              <p style={{fontSize:13,color:"#64748b"}}>Bitte melden Sie sich an</p>
-            </div>
-            
-            <form onSubmit={handleSubmit}>
-              <div style={{marginBottom:16}}>
-                <label style={{display:"block",fontSize:12,color:"#94a3b8",marginBottom:6}}>Benutzername</label>
-                <input type="text" value={user} onChange={e=>setUser(e.target.value)}
-                  style={{width:"100%",background:"#0f172a",border:"1px solid #334155",borderRadius:8,padding:"12px 14px",color:"#e2e8f0",fontSize:14}}
-                  placeholder="Benutzername eingeben" autoFocus />
-              </div>
-              <div style={{marginBottom:24}}>
-                <label style={{display:"block",fontSize:12,color:"#94a3b8",marginBottom:6}}>Passwort</label>
-                <input type="password" value={pass} onChange={e=>setPass(e.target.value)}
-                  style={{width:"100%",background:"#0f172a",border:"1px solid #334155",borderRadius:8,padding:"12px 14px",color:"#e2e8f0",fontSize:14}}
-                  placeholder="Passwort eingeben" />
-              </div>
-              
-              {error && (
-                <div style={{background:"rgba(127,29,29,0.3)",border:"1px solid #991b1b",borderRadius:8,padding:"10px 14px",marginBottom:16,color:"#fca5a5",fontSize:13,textAlign:"center"}}>
-                  {error}
-                </div>
-              )}
-              
-              <button type="submit" style={{
-                width:"100%",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#0f172a",border:"none",
-                borderRadius:8,padding:"12px 14px",fontSize:14,fontWeight:600,cursor:"pointer"
-              }}>Anmelden</button>
-            </form>
-          </div>
-        </div>
-      );
-    }
-
-    // Main Wrapper
-    function Root() {
-      const [auth, setAuth] = useState(() => sessionStorage.getItem(AUTH_KEY) === "1");
-      
-      if (!auth) return <Login onLogin={() => setAuth(true)} />;
-      return <App />;
-    }
-
-    ReactDOM.createRoot(document.getElementById("root")).render(<Root />);
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
   </script>
 </body>
 </html>
