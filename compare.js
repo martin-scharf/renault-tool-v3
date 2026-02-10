@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Renault Preisdaten Vergleich & Email Report
+// Renault Preisdaten Vergleich & Email Report - MIT INLINE STYLES für Email
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -100,107 +100,83 @@ function compare(todayRecords, yesterdayRecords) {
   return result;
 }
 
+// Status-Farben als inline styles
+const statusColors = {
+  "Normal": { bg: "#d1fae5", color: "#065f46" },
+  "Austauschbar mit": { bg: "#fef3c7", color: "#92400e" },
+  "Wird ersetzt durch": { bg: "#fee2e2", color: "#991b1b" },
+  "Nicht mehr lieferbar": { bg: "#fecaca", color: "#7f1d1d" },
+  "Gesperrt, später lieferbar": { bg: "#e0e7ff", color: "#3730a3" }
+};
+
+function getStatusBadge(status) {
+  const c = statusColors[status] || { bg: "#f1f5f9", color: "#475569" };
+  return `<span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:600;background:${c.bg};color:${c.color}">${status}</span>`;
+}
+
 function generateHTML(comp) {
-  const priceUp = comp.priceChanges.filter(p => p.diff > 0);
-  const priceDown = comp.priceChanges.filter(p => p.diff < 0);
-  
-  // Status color mapping
-  const statusColors = {
-    "Normal": { bg: "#f0fdf4", color: "#166534" },
-    "Austauschbar mit": { bg: "#fef3c7", color: "#b45309" },
-    "Wird ersetzt durch": { bg: "#fee2e2", color: "#dc2626" },
-    "Nicht mehr lieferbar": { bg: "#fecaca", color: "#991b1b" },
-    "Gesperrt, später lieferbar": { bg: "#e0e7ff", color: "#4338ca" }
-  };
-  
-  const getStatusStyle = (status) => {
-    const c = statusColors[status] || { bg: "#f1f5f9", color: "#475569" };
-    return `background:${c.bg};color:${c.color}`;
-  };
-  
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
-    .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    h1 { color: #1e293b; font-size: 24px; margin-bottom: 8px; }
-    .subtitle { color: #64748b; font-size: 14px; margin-bottom: 24px; }
-    .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
-    .stat { background: #f8fafc; border-radius: 8px; padding: 16px; text-align: center; }
-    .stat-value { font-size: 28px; font-weight: 700; }
-    .stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; }
-    .stat-new .stat-value { color: #3b82f6; }
-    .stat-del .stat-value { color: #f97316; }
-    .stat-price .stat-value { color: #8b5cf6; }
-    .stat-status .stat-value { color: #0891b2; }
-    .stat-fam .stat-value { color: #84cc16; }
-    .section { margin-bottom: 24px; }
-    .section h2 { font-size: 16px; color: #334155; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-    th { background: #f8fafc; color: #64748b; font-weight: 600; font-size: 10px; text-transform: uppercase; }
-    .price-up { background: #fef2f2; }
-    .price-down { background: #f0fdf4; }
-    .price-val-up { color: #dc2626; font-weight: 700; }
-    .price-val-down { color: #16a34a; font-weight: 700; }
-    .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 600; }
-    .badge-blue { background: #dbeafe; color: #1d4ed8; }
-    .badge-green { background: #dcfce7; color: #15803d; }
-    .badge-red { background: #fee2e2; color: #dc2626; }
-    .badge-orange { background: #ffedd5; color: #c2410c; }
-    .badge-purple { background: #f3e8ff; color: #7c3aed; }
-    .badge-cyan { background: #cffafe; color: #0891b2; }
-    .mono { font-family: "SF Mono", Monaco, monospace; font-size: 11px; }
-    .footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 11px; text-align: center; }
-    .arrow { font-weight: bold; color: #94a3b8; margin: 0 4px; }
-  </style>
 </head>
-<body>
-  <div class="container">
-    <h1>🚗 Renault Preisänderungen</h1>
-    <p class="subtitle">
+<body style="font-family:Arial,Helvetica,sans-serif;background:#f5f5f5;padding:20px;margin:0;">
+  <div style="max-width:900px;margin:0 auto;background:white;border-radius:12px;padding:24px;">
+    <h1 style="color:#1e293b;font-size:24px;margin:0 0 8px 0;">Renault Preisänderungen</h1>
+    <p style="color:#64748b;font-size:14px;margin:0 0 24px 0;">
       Vergleich: ${formatDate(comp.yesterdayDate)} → ${formatDate(comp.todayDate)} | 
       ${comp.todayCount.toLocaleString()} Artikel
     </p>
     
-    <div class="stats">
-      <div class="stat stat-new">
-        <div class="stat-value">${comp.newArticles.length}</div>
-        <div class="stat-label">Neue Artikel</div>
-      </div>
-      <div class="stat stat-del">
-        <div class="stat-value">${comp.deletedArticles.length}</div>
-        <div class="stat-label">Gelöscht</div>
-      </div>
-      <div class="stat stat-price">
-        <div class="stat-value">${comp.priceChanges.length}</div>
-        <div class="stat-label">Preisänderungen</div>
-      </div>
-      <div class="stat stat-status">
-        <div class="stat-value">${comp.statusChanges.length}</div>
-        <div class="stat-label">Status</div>
-      </div>
-      <div class="stat stat-fam">
-        <div class="stat-value">${comp.familyChanges.length}</div>
-        <div class="stat-label">Familie</div>
-      </div>
-    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+      <tr>
+        <td style="background:#f8fafc;border-radius:8px;padding:16px;text-align:center;width:20%;">
+          <div style="font-size:28px;font-weight:700;color:#3b82f6;">${comp.newArticles.length}</div>
+          <div style="font-size:11px;color:#64748b;text-transform:uppercase;">Neue Artikel</div>
+        </td>
+        <td style="width:4px;"></td>
+        <td style="background:#f8fafc;border-radius:8px;padding:16px;text-align:center;width:20%;">
+          <div style="font-size:28px;font-weight:700;color:#f97316;">${comp.deletedArticles.length}</div>
+          <div style="font-size:11px;color:#64748b;text-transform:uppercase;">Gelöscht</div>
+        </td>
+        <td style="width:4px;"></td>
+        <td style="background:#f8fafc;border-radius:8px;padding:16px;text-align:center;width:20%;">
+          <div style="font-size:28px;font-weight:700;color:#8b5cf6;">${comp.priceChanges.length}</div>
+          <div style="font-size:11px;color:#64748b;text-transform:uppercase;">Preisänderungen</div>
+        </td>
+        <td style="width:4px;"></td>
+        <td style="background:#f8fafc;border-radius:8px;padding:16px;text-align:center;width:20%;">
+          <div style="font-size:28px;font-weight:700;color:#0891b2;">${comp.statusChanges.length}</div>
+          <div style="font-size:11px;color:#64748b;text-transform:uppercase;">Status</div>
+        </td>
+        <td style="width:4px;"></td>
+        <td style="background:#f8fafc;border-radius:8px;padding:16px;text-align:center;width:20%;">
+          <div style="font-size:28px;font-weight:700;color:#84cc16;">${comp.familyChanges.length}</div>
+          <div style="font-size:11px;color:#64748b;text-transform:uppercase;">Familie</div>
+        </td>
+      </tr>
+    </table>
 
     ${comp.priceChanges.length > 0 ? `
-    <div class="section">
-      <h2>💰 Preisänderungen (${comp.priceChanges.length})</h2>
-      <table>
-        <tr><th>Teilenr.</th><th>Bezeichnung</th><th>Alter Preis</th><th></th><th>Neuer Preis</th><th>Änderung</th></tr>
+    <div style="margin-bottom:24px;">
+      <h2 style="font-size:16px;color:#334155;margin:0 0 12px 0;padding-bottom:8px;border-bottom:1px solid #e2e8f0;">Preisänderungen (${comp.priceChanges.length})</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <tr>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Teilenr.</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Bezeichnung</th>
+          <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Alter Preis</th>
+          <th style="padding:8px 10px;text-align:center;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;"></th>
+          <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Neuer Preis</th>
+          <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Änderung</th>
+        </tr>
         ${comp.priceChanges.slice(0, 50).map(p => `
-        <tr class="${p.diff > 0 ? 'price-up' : 'price-down'}">
-          <td class="mono">${p.teilenr}</td>
-          <td>${p.bez1}</td>
-          <td>${formatPrice(p.oldPrice)}</td>
-          <td class="arrow">→</td>
-          <td><strong>${formatPrice(p.newPrice)}</strong></td>
-          <td class="${p.diff > 0 ? 'price-val-up' : 'price-val-down'}">${p.diff > 0 ? '+' : ''}${formatPrice(p.diff)} (${p.diff > 0 ? '+' : ''}${p.diffPct}%)</td>
+        <tr style="background:${p.diff > 0 ? '#fef2f2' : '#f0fdf4'};">
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;font-family:Consolas,Monaco,monospace;font-size:11px;">${p.teilenr}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;">${p.bez1}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:right;">${formatPrice(p.oldPrice)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:center;color:#94a3b8;">→</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:700;">${formatPrice(p.newPrice)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:700;color:${p.diff > 0 ? '#dc2626' : '#16a34a'};">${p.diff > 0 ? '+' : ''}${formatPrice(p.diff)} (${p.diff > 0 ? '+' : ''}${p.diffPct}%)</td>
         </tr>
         `).join('')}
       </table>
@@ -209,18 +185,25 @@ function generateHTML(comp) {
     ` : ''}
 
     ${comp.statusChanges.length > 0 ? `
-    <div class="section">
-      <h2>🔄 Statusänderungen (${comp.statusChanges.length})</h2>
-      <table>
-        <tr><th>Teilenr.</th><th>Bezeichnung</th><th>Alter Status</th><th></th><th>Neuer Status</th><th>Ersatz-Nr.</th></tr>
+    <div style="margin-bottom:24px;">
+      <h2 style="font-size:16px;color:#334155;margin:0 0 12px 0;padding-bottom:8px;border-bottom:1px solid #e2e8f0;">Statusänderungen (${comp.statusChanges.length})</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <tr>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Teilenr.</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Bezeichnung</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Alter Status</th>
+          <th style="padding:8px 10px;text-align:center;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;"></th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Neuer Status</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Ersatz-Nr.</th>
+        </tr>
         ${comp.statusChanges.slice(0, 50).map(s => `
         <tr>
-          <td class="mono">${s.teilenr}</td>
-          <td>${s.bez1}</td>
-          <td><span class="badge" style="${getStatusStyle(s.oldStatusText)}">${s.oldStatusText}</span></td>
-          <td class="arrow">→</td>
-          <td><span class="badge" style="${getStatusStyle(s.newStatusText)}">${s.newStatusText}</span></td>
-          <td class="mono" style="${s.austauschNr ? 'color:#dc2626;font-weight:600' : ''}">${s.austauschNr || '-'}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;font-family:Consolas,Monaco,monospace;font-size:11px;">${s.teilenr}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;">${s.bez1}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;">${getStatusBadge(s.oldStatusText)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:center;color:#94a3b8;">→</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;">${getStatusBadge(s.newStatusText)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;font-family:Consolas,Monaco,monospace;font-size:11px;${s.austauschNr ? 'color:#dc2626;font-weight:600;' : ''}">${s.austauschNr || '-'}</td>
         </tr>
         `).join('')}
       </table>
@@ -229,18 +212,25 @@ function generateHTML(comp) {
     ` : ''}
 
     ${comp.newArticles.length > 0 ? `
-    <div class="section">
-      <h2>🆕 Neue Artikel (${comp.newArticles.length})</h2>
-      <table>
-        <tr><th>Teilenr.</th><th>Bezeichnung</th><th>Preis</th><th>Familie</th><th>Status</th><th>Ersatz-Nr.</th></tr>
+    <div style="margin-bottom:24px;">
+      <h2 style="font-size:16px;color:#334155;margin:0 0 12px 0;padding-bottom:8px;border-bottom:1px solid #e2e8f0;">Neue Artikel (${comp.newArticles.length})</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <tr>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Teilenr.</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Bezeichnung</th>
+          <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Preis</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Familie</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Status</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Ersatz-Nr.</th>
+        </tr>
         ${comp.newArticles.slice(0, 50).map(a => `
-        <tr style="background:#f0f9ff">
-          <td class="mono" style="color:#2563eb;font-weight:600">${a.teilenr}</td>
-          <td>${a.bez1}</td>
-          <td>${formatPrice(a.upeCent)}</td>
-          <td><span class="badge badge-blue">${a.familie}</span></td>
-          <td>${a.teileCode && a.teileCode !== ' ' ? `<span class="badge" style="${getStatusStyle(TEILE_CODE[a.teileCode])}">${TEILE_CODE[a.teileCode]}</span>` : '<span class="badge badge-green">Normal</span>'}</td>
-          <td class="mono" style="${a.austauschNr ? 'color:#dc2626;font-weight:600' : ''}">${a.austauschNr || '-'}</td>
+        <tr style="background:#eff6ff;">
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;font-family:Consolas,Monaco,monospace;font-size:11px;color:#2563eb;font-weight:600;">${a.teilenr}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;">${a.bez1}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:right;">${formatPrice(a.upeCent)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;"><span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:600;background:#dbeafe;color:#1d4ed8;">${a.familie}</span></td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;">${a.teileCode && a.teileCode !== ' ' ? getStatusBadge(TEILE_CODE[a.teileCode]) : getStatusBadge('Normal')}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;font-family:Consolas,Monaco,monospace;font-size:11px;${a.austauschNr ? 'color:#dc2626;font-weight:600;' : ''}">${a.austauschNr || '-'}</td>
         </tr>
         `).join('')}
       </table>
@@ -249,17 +239,23 @@ function generateHTML(comp) {
     ` : ''}
 
     ${comp.familyChanges.length > 0 ? `
-    <div class="section">
-      <h2>👨‍👩‍👧 Familienänderungen (${comp.familyChanges.length})</h2>
-      <table>
-        <tr><th>Teilenr.</th><th>Bezeichnung</th><th>Alte Familie</th><th></th><th>Neue Familie</th></tr>
+    <div style="margin-bottom:24px;">
+      <h2 style="font-size:16px;color:#334155;margin:0 0 12px 0;padding-bottom:8px;border-bottom:1px solid #e2e8f0;">Familienänderungen (${comp.familyChanges.length})</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <tr>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Teilenr.</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Bezeichnung</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Alte Familie</th>
+          <th style="padding:8px 10px;text-align:center;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;"></th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Neue Familie</th>
+        </tr>
         ${comp.familyChanges.slice(0, 50).map(f => `
-        <tr style="background:#fefce8">
-          <td class="mono">${f.teilenr}</td>
-          <td>${f.bez1}</td>
-          <td><span class="badge badge-purple">${f.oldFamily}</span></td>
-          <td class="arrow">→</td>
-          <td><span class="badge badge-cyan">${f.newFamily}</span></td>
+        <tr style="background:#fefce8;">
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;font-family:Consolas,Monaco,monospace;font-size:11px;">${f.teilenr}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;">${f.bez1}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;"><span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:600;background:#f3e8ff;color:#7c3aed;">${f.oldFamily}</span></td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:center;color:#94a3b8;">→</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;"><span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:600;background:#cffafe;color:#0891b2;">${f.newFamily}</span></td>
         </tr>
         `).join('')}
       </table>
@@ -268,16 +264,21 @@ function generateHTML(comp) {
     ` : ''}
 
     ${comp.deletedArticles.length > 0 ? `
-    <div class="section">
-      <h2>🗑️ Gelöschte Artikel (${comp.deletedArticles.length})</h2>
-      <table>
-        <tr><th>Teilenr.</th><th>Bezeichnung</th><th>Letzter Preis</th><th>Familie</th></tr>
+    <div style="margin-bottom:24px;">
+      <h2 style="font-size:16px;color:#334155;margin:0 0 12px 0;padding-bottom:8px;border-bottom:1px solid #e2e8f0;">Gelöschte Artikel (${comp.deletedArticles.length})</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <tr>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Teilenr.</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Bezeichnung</th>
+          <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Letzter Preis</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Familie</th>
+        </tr>
         ${comp.deletedArticles.slice(0, 50).map(a => `
-        <tr style="background:#fef2f2">
-          <td class="mono" style="color:#dc2626;font-weight:600">${a.teilenr}</td>
-          <td style="color:#991b1b">${a.bez1}</td>
-          <td>${formatPrice(a.upeCent)}</td>
-          <td><span class="badge badge-orange">${a.familie}</span></td>
+        <tr style="background:#fef2f2;">
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;font-family:Consolas,Monaco,monospace;font-size:11px;color:#dc2626;font-weight:600;">${a.teilenr}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;color:#991b1b;">${a.bez1}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:right;">${formatPrice(a.upeCent)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;"><span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:600;background:#ffedd5;color:#c2410c;">${a.familie}</span></td>
         </tr>
         `).join('')}
       </table>
@@ -285,8 +286,8 @@ function generateHTML(comp) {
     </div>
     ` : ''}
 
-    <div class="footer">
-      Automatisch generiert am ${new Date().toLocaleString('de-DE')} | Renault Tool V3
+    <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:11px;text-align:center;">
+      Generiert am ${new Date().toLocaleString('de-DE')} | Renault Tool V3
     </div>
   </div>
 </body>
@@ -371,6 +372,5 @@ try {
   console.log("Email sent!");
 } catch (e) {
   console.error("Email error:", e.message);
-  // Fallback: just log
   console.log("Report ready at:", htmlFile);
 }

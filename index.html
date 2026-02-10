@@ -49,6 +49,16 @@
     .change-down { color: #4ade80; }
     .change-new { color: #60a5fa; }
     .change-del { color: #fb923c; }
+    /* Farbkodierung für Vergleich */
+    .row-price-up { background: #7f1d1d !important; }
+    .row-price-down { background: #064e3b !important; }
+    .row-new { background: #1e3a5f !important; }
+    .row-deleted { background: #7f1d1d !important; }
+    .row-status-normal { background: #064e3b !important; }
+    .row-status-austausch { background: #78350f !important; }
+    .row-status-ersetzt { background: #7f1d1d !important; }
+    .row-status-gesperrt { background: #4c1d95 !important; }
+    .ersatz-nr { color: #f87171 !important; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -616,12 +626,12 @@
                             <thead><tr><th>Teilenr.</th><th>Bezeichnung</th><th>Alter Preis</th><th>Neuer Preis</th><th>Diff</th></tr></thead>
                             <tbody>
                               {comparison.priceChanges.slice(0, 100).map((p, i) => (
-                                <tr key={i}>
+                                <tr key={i} className={p.diff > 0 ? "row-price-up" : "row-price-down"}>
                                   <td style={{fontFamily:"monospace"}}>{p.teilenr}</td>
                                   <td>{p.bez1}</td>
                                   <td>{formatPrice(p.oldPrice)}</td>
                                   <td>{formatPrice(p.newPrice)}</td>
-                                  <td className={p.diff > 0 ? "change-up" : "change-down"}>
+                                  <td style={{fontWeight:700}}>
                                     {p.diff > 0 ? "+" : ""}{formatPrice(p.diff)} ({p.diffPct}%)
                                   </td>
                                 </tr>
@@ -650,21 +660,22 @@
                       ) : (
                         <div style={{maxHeight:300,overflow:"auto"}}>
                           <table>
-                            <thead><tr><th>Teilenr.</th><th>Bezeichnung</th><th>Preis</th><th>Familie</th><th>Status</th></tr></thead>
+                            <thead><tr><th>Teilenr.</th><th>Bezeichnung</th><th>Preis</th><th>Familie</th><th>Status</th><th>Ersatz-Nr.</th></tr></thead>
                             <tbody>
                               {comparison.newArticles.slice(0, 100).map((a, i) => (
-                                <tr key={i}>
+                                <tr key={i} className="row-new">
                                   <td style={{fontFamily:"monospace"}}>{a.teilenr}</td>
                                   <td>{a.bez1}</td>
                                   <td>{formatPrice(a.upeCent)}</td>
                                   <td><span className="badge badge-blue">{a.familie}</span></td>
                                   <td>
-                                    {a.teileCode && a.teileCode !== " " && (
+                                    {a.teileCode && a.teileCode !== " " ? (
                                       <span className="badge badge-yellow">
-                                        {TEILE_CODE[a.teileCode]} {a.austauschNr && `→ ${a.austauschNr}`}
+                                        {TEILE_CODE[a.teileCode]}
                                       </span>
-                                    )}
+                                    ) : <span className="badge badge-green">Normal</span>}
                                   </td>
+                                  <td className={a.austauschNr ? "ersatz-nr" : ""} style={{fontFamily:"monospace"}}>{a.austauschNr || "-"}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -693,15 +704,21 @@
                           <table>
                             <thead><tr><th>Teilenr.</th><th>Bezeichnung</th><th>Alter Status</th><th>Neuer Status</th><th>Ersatz-Nr.</th></tr></thead>
                             <tbody>
-                              {comparison.statusChanges.slice(0, 100).map((s, i) => (
-                                <tr key={i}>
+                              {comparison.statusChanges.slice(0, 100).map((s, i) => {
+                                const statusClass = 
+                                  s.newStatusText === "Normal" ? "row-status-normal" :
+                                  s.newStatusText === "Austauschbar mit" ? "row-status-austausch" :
+                                  s.newStatusText === "Gesperrt, später lieferbar" ? "row-status-gesperrt" :
+                                  "row-status-ersetzt";
+                                return (
+                                <tr key={i} className={statusClass}>
                                   <td style={{fontFamily:"monospace"}}>{s.teilenr}</td>
                                   <td>{s.bez1}</td>
                                   <td>{s.oldStatusText}</td>
-                                  <td><span className="badge badge-yellow">{s.newStatusText}</span></td>
-                                  <td style={{fontFamily:"monospace"}}>{s.austauschNr}</td>
+                                  <td><strong>{s.newStatusText}</strong></td>
+                                  <td className={s.austauschNr ? "ersatz-nr" : ""} style={{fontFamily:"monospace"}}>{s.austauschNr || "-"}</td>
                                 </tr>
-                              ))}
+                              );})}
                             </tbody>
                           </table>
                         </div>
@@ -761,8 +778,8 @@
                             <thead><tr><th>Teilenr.</th><th>Bezeichnung</th><th>Letzter Preis</th><th>Familie</th></tr></thead>
                             <tbody>
                               {comparison.deletedArticles.slice(0, 100).map((a, i) => (
-                                <tr key={i}>
-                                  <td style={{fontFamily:"monospace",color:"#fb923c"}}>{a.teilenr}</td>
+                                <tr key={i} className="row-deleted">
+                                  <td style={{fontFamily:"monospace"}}>{a.teilenr}</td>
                                   <td>{a.bez1}</td>
                                   <td>{formatPrice(a.upeCent)}</td>
                                   <td><span className="badge badge-blue">{a.familie}</span></td>
