@@ -891,11 +891,38 @@
                     <h2 style={{fontSize:20}}>Rabatte verwalten</h2>
                     <p style={{fontSize:12,color:"#64748b"}}>{Object.keys(families).length} Familien • Kalkulation: {activeYear}</p>
                   </div>
-                  <div style={{display:"flex",gap:8}}>
+                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
                     <select value={activeYear} onChange={e => updSettings({...settings, activeYear: parseInt(e.target.value)})} style={{background:"#1e293b",border:"1px solid #334155",borderRadius:6,padding:"6px 12px",color:"#e2e8f0"}}>
                       {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                     </select>
                     <button onClick={() => dl(JSON.stringify(settings, null, 2), "rabatte-backup.json")} className="btn btn-secondary" style={{padding:"6px 12px",fontSize:11}}>💾 Backup</button>
+                    <input 
+                      type="file" 
+                      accept=".json"
+                      style={{display:"none"}}
+                      id="backup-upload"
+                      onChange={e => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                          try {
+                            const imported = JSON.parse(evt.target.result);
+                            if (imported.families && imported.activeYear) {
+                              updSettings(imported);
+                              setMsg("✓ Backup erfolgreich importiert!");
+                            } else {
+                              setMsg("❌ Ungültiges Backup-Format");
+                            }
+                          } catch(err) {
+                            setMsg("❌ Fehler beim Import: " + err.message);
+                          }
+                        };
+                        reader.readAsText(file);
+                        e.target.value = '';
+                      }}
+                    />
+                    <button onClick={() => document.getElementById('backup-upload').click()} className="btn btn-secondary" style={{padding:"6px 12px",fontSize:11}}>📂 Import</button>
                   </div>
                 </div>
 
