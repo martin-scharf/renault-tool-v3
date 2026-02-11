@@ -213,6 +213,171 @@ function styleRow(row, color) {
   });
 }
 
+// === HTML REPORT MIT FARBEN ===
+function generateHTMLReport(comp, todayDate) {
+  const statusColors = {
+    "Normal": { bg: "#d1fae5", color: "#065f46" },
+    "Austauschbar mit": { bg: "#fef3c7", color: "#92400e" },
+    "Wird ersetzt durch": { bg: "#fee2e2", color: "#991b1b" },
+    "Nicht mehr lieferbar": { bg: "#fecaca", color: "#7f1d1d" },
+    "Gesperrt, später lieferbar": { bg: "#e0e7ff", color: "#3730a3" }
+  };
+
+  const getStatusBadge = (status) => {
+    const c = statusColors[status] || { bg: "#f1f5f9", color: "#475569" };
+    return `<span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:600;background:${c.bg};color:${c.color}">${status}</span>`;
+  };
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Renault Preisänderungen ${formatDate(todayDate)}</title>
+</head>
+<body style="font-family:Arial,Helvetica,sans-serif;background:#f5f5f5;padding:20px;margin:0;">
+  <div style="max-width:900px;margin:0 auto;background:white;border-radius:12px;padding:24px;">
+    <h1 style="color:#1e293b;font-size:24px;margin:0 0 8px 0;">Renault Preisänderungen</h1>
+    <p style="color:#64748b;font-size:14px;margin:0 0 24px 0;">Stand: ${formatDate(todayDate)}</p>
+    
+    <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+      <tr>
+        <td style="background:#f8fafc;border-radius:8px;padding:16px;text-align:center;width:20%;">
+          <div style="font-size:28px;font-weight:700;color:#3b82f6;">${comp.newArticles.length}</div>
+          <div style="font-size:11px;color:#64748b;text-transform:uppercase;">Neue Artikel</div>
+        </td>
+        <td style="width:4px;"></td>
+        <td style="background:#f8fafc;border-radius:8px;padding:16px;text-align:center;width:20%;">
+          <div style="font-size:28px;font-weight:700;color:#f97316;">${comp.deletedArticles.length}</div>
+          <div style="font-size:11px;color:#64748b;text-transform:uppercase;">Gelöscht</div>
+        </td>
+        <td style="width:4px;"></td>
+        <td style="background:#f8fafc;border-radius:8px;padding:16px;text-align:center;width:20%;">
+          <div style="font-size:28px;font-weight:700;color:#8b5cf6;">${comp.priceChanges.length}</div>
+          <div style="font-size:11px;color:#64748b;text-transform:uppercase;">Preisänderungen</div>
+        </td>
+        <td style="width:4px;"></td>
+        <td style="background:#f8fafc;border-radius:8px;padding:16px;text-align:center;width:20%;">
+          <div style="font-size:28px;font-weight:700;color:#0891b2;">${comp.statusChanges.length}</div>
+          <div style="font-size:11px;color:#64748b;text-transform:uppercase;">Status</div>
+        </td>
+        <td style="width:4px;"></td>
+        <td style="background:#f8fafc;border-radius:8px;padding:16px;text-align:center;width:20%;">
+          <div style="font-size:28px;font-weight:700;color:#84cc16;">${comp.familyChanges.length}</div>
+          <div style="font-size:11px;color:#64748b;text-transform:uppercase;">Familie</div>
+        </td>
+      </tr>
+    </table>
+
+    ${comp.priceChanges.length > 0 ? `
+    <div style="margin-bottom:24px;">
+      <h2 style="font-size:16px;color:#334155;margin:0 0 12px 0;padding-bottom:8px;border-bottom:1px solid #e2e8f0;">Preisänderungen (${comp.priceChanges.length})</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <tr>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Teilenr.</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Bezeichnung</th>
+          <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Alter Preis</th>
+          <th style="padding:8px 10px;text-align:center;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;"></th>
+          <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Neuer Preis</th>
+          <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Änderung</th>
+        </tr>
+        ${comp.priceChanges.slice(0, 100).map(p => `
+        <tr style="background:${p.diff > 0 ? '#fef2f2' : '#f0fdf4'};">
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;font-family:Consolas,Monaco,monospace;font-size:11px;">${p.teilenr}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;">${p.bez1}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:right;">${formatPriceStr(p.oldPrice)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:center;color:#94a3b8;">→</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:700;">${formatPriceStr(p.newPrice)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:700;color:${p.diff > 0 ? '#dc2626' : '#16a34a'};">${p.diff > 0 ? '+' : ''}${formatPriceStr(p.diff)} (${p.diff > 0 ? '+' : ''}${p.diffPct}%)</td>
+        </tr>
+        `).join('')}
+      </table>
+      ${comp.priceChanges.length > 100 ? `<p style="color:#64748b;font-size:11px;padding:8px;">... und ${comp.priceChanges.length - 100} weitere</p>` : ''}
+    </div>
+    ` : ''}
+
+    ${comp.statusChanges.length > 0 ? `
+    <div style="margin-bottom:24px;">
+      <h2 style="font-size:16px;color:#334155;margin:0 0 12px 0;padding-bottom:8px;border-bottom:1px solid #e2e8f0;">Statusänderungen (${comp.statusChanges.length})</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <tr>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Teilenr.</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Bezeichnung</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Alter Status</th>
+          <th style="padding:8px 10px;text-align:center;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;"></th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Neuer Status</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Ersatz-Nr.</th>
+        </tr>
+        ${comp.statusChanges.slice(0, 100).map(s => `
+        <tr>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;font-family:Consolas,Monaco,monospace;font-size:11px;">${s.teilenr}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;">${s.bez1}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;">${getStatusBadge(s.oldStatusText)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:center;color:#94a3b8;">→</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;">${getStatusBadge(s.newStatusText)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;font-family:Consolas,Monaco,monospace;font-size:11px;${s.austauschNr ? 'color:#dc2626;font-weight:600;' : ''}">${s.austauschNr || '-'}</td>
+        </tr>
+        `).join('')}
+      </table>
+      ${comp.statusChanges.length > 100 ? `<p style="color:#64748b;font-size:11px;padding:8px;">... und ${comp.statusChanges.length - 100} weitere</p>` : ''}
+    </div>
+    ` : ''}
+
+    ${comp.newArticles.length > 0 ? `
+    <div style="margin-bottom:24px;">
+      <h2 style="font-size:16px;color:#334155;margin:0 0 12px 0;padding-bottom:8px;border-bottom:1px solid #e2e8f0;">Neue Artikel (${comp.newArticles.length})</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <tr>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Teilenr.</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Bezeichnung</th>
+          <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Preis</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Familie</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Status</th>
+        </tr>
+        ${comp.newArticles.slice(0, 100).map(a => `
+        <tr style="background:#eff6ff;">
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;font-family:Consolas,Monaco,monospace;font-size:11px;color:#2563eb;font-weight:600;">${a.teilenr}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;">${a.bez1}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:right;">${formatPriceStr(a.upeCent)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;"><span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:600;background:#dbeafe;color:#1d4ed8;">${a.familie}</span></td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;">${a.teileCode && a.teileCode !== ' ' ? getStatusBadge(TEILE_CODE[a.teileCode]) : getStatusBadge('Normal')}</td>
+        </tr>
+        `).join('')}
+      </table>
+      ${comp.newArticles.length > 100 ? `<p style="color:#64748b;font-size:11px;padding:8px;">... und ${comp.newArticles.length - 100} weitere</p>` : ''}
+    </div>
+    ` : ''}
+
+    ${comp.deletedArticles.length > 0 ? `
+    <div style="margin-bottom:24px;">
+      <h2 style="font-size:16px;color:#334155;margin:0 0 12px 0;padding-bottom:8px;border-bottom:1px solid #e2e8f0;">Gelöschte Artikel (${comp.deletedArticles.length})</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <tr>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Teilenr.</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Bezeichnung</th>
+          <th style="padding:8px 10px;text-align:right;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Letzter Preis</th>
+          <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:600;font-size:10px;">Familie</th>
+        </tr>
+        ${comp.deletedArticles.slice(0, 100).map(a => `
+        <tr style="background:#fef2f2;">
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;font-family:Consolas,Monaco,monospace;font-size:11px;color:#dc2626;font-weight:600;">${a.teilenr}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;color:#991b1b;">${a.bez1}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;text-align:right;">${formatPriceStr(a.upeCent)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e2e8f0;"><span style="display:inline-block;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:600;background:#ffedd5;color:#c2410c;">${a.familie}</span></td>
+        </tr>
+        `).join('')}
+      </table>
+      ${comp.deletedArticles.length > 100 ? `<p style="color:#64748b;font-size:11px;padding:8px;">... und ${comp.deletedArticles.length - 100} weitere</p>` : ''}
+    </div>
+    ` : ''}
+
+    <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:11px;text-align:center;">
+      Generiert am ${new Date().toLocaleString('de-DE')} | Renault Tool V3
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
 async function generateExcelReport(comp, todayDate, outputPath) {
   const workbook = new ExcelJS.Workbook();
 
@@ -352,6 +517,11 @@ async function main() {
     excelFile = path.join(REPORT_DIR, `renault-vergleich-${dateStr}.xlsx`);
     await generateExcelReport(comp, todayDate, excelFile);
     console.log(`✓ ${excelFile}`);
+    
+    // HTML Report mit Farben
+    const htmlFile = path.join(REPORT_DIR, `renault-vergleich-${dateStr}.html`);
+    fs.writeFileSync(htmlFile, generateHTMLReport(comp, todayDate));
+    console.log(`✓ ${htmlFile}`);
   }
 
   // 3. Send via Telegram
@@ -376,7 +546,10 @@ async function main() {
   console.log("\nDateien erstellt:");
   console.log(`- ${priceFileCustomer}`);
   console.log(`- ${priceFileCSS}`);
-  if (excelFile) console.log(`- ${excelFile}`);
+  if (excelFile) {
+    console.log(`- ${excelFile}`);
+    console.log(`- ${excelFile.replace('.xlsx', '.html')}`);
+  }
 }
 
 main().catch(console.error);
