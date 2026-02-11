@@ -524,32 +524,63 @@ async function main() {
     console.log(`✓ ${htmlFile}`);
   }
 
-  // 3. Send via Telegram
-  console.log("\n=== Telegram senden ===");
+  // 3. Create ZIP with all files
+  console.log("\n=== ZIP erstellen ===");
+  const zipFile = path.join(REPORT_DIR, `renault-report-${dateStr}.zip`);
+  const filesToZip = [priceFileCustomer, priceFileCSS];
+  if (excelFile) {
+    filesToZip.push(excelFile);
+    filesToZip.push(excelFile.replace('.xlsx', '.html'));
+  }
+  execSync(`cd "${REPORT_DIR}" && zip -j "${zipFile}" ${filesToZip.map(f => `"${path.basename(f)}"`).join(' ')}`);
+  console.log(`✓ ${zipFile}`);
+
+  // 4. Send via Email
+  console.log("\n=== Email senden ===");
   
   // Summary message
   let msg = `Renault Preislisten ${formatDate(todayDate)}\n\n`;
-  msg += `📊 ${todayRecords.length.toLocaleString()} Artikel\n`;
-  msg += `✓ ${priceLists.stats.ok.toLocaleString()} mit Rabatt kalkuliert\n`;
+  msg += `${todayRecords.length.toLocaleString()} Artikel\n`;
+  msg += `${priceLists.stats.ok.toLocaleString()} mit Rabatt kalkuliert\n`;
   if (comp) {
-    msg += `\n🔄 Änderungen:\n`;
-    msg += `• ${comp.newArticles.length} neue Artikel\n`;
-    msg += `• ${comp.priceChanges.length} Preisänderungen\n`;
-    msg += `• ${comp.statusChanges.length} Statusänderungen\n`;
+    msg += `\nÄnderungen:\n`;
+    msg += `- ${comp.newArticles.length} neue Artikel\n`;
+    msg += `- ${comp.priceChanges.length} Preisänderungen\n`;
+    msg += `- ${comp.statusChanges.length} Statusänderungen\n`;
+  }
+  msg += `\nDateien im Anhang:\n`;
+  msg += `- Preisdatei Renault.csv\n`;
+  msg += `- Preisliste css Renault.csv\n`;
+  if (excelFile) {
+    msg += `- renault-vergleich-${dateStr}.xlsx\n`;
+    msg += `- renault-vergleich-${dateStr}.html\n`;
   }
 
-  // Use curl to send to Telegram via OpenClaw
-  // (or you can integrate with OpenClaw's message API)
+  // Send email via AppleScript
+  const subject = `Renault OE Preislisten ${formatDate(todayDate)}`;
+  const recipient = 'martin@s-a-z.com';
+  
+  const appleScript = `
+    tell application "Mail"
+      set newMessage to make new outgoing message with properties {subject:"${subject}", content:"${msg.replace(/"/g, '\\"').replace(/\n/g, '\\n')}"}
+      tell newMessage
+        set visible to false
+        make new to recipient at end of to recipients with properties {address:"${recipient}"}
+        make new attachment with properties {file name:POSIX file "${zipFile}"} at after the last paragraph
+      end tell
+      send newMessage
+    end tell
+  `;
+  
+  try {
+    execSync(`osascript -e '${appleScript.replace(/'/g, "'\"'\"'")}'`);
+    console.log(`✓ Email gesendet an ${recipient}`);
+  } catch (e) {
+    console.log(`⚠ Email-Versand fehlgeschlagen: ${e.message}`);
+  }
   
   console.log("\nZusammenfassung:");
   console.log(msg);
-  console.log("\nDateien erstellt:");
-  console.log(`- ${priceFileCustomer}`);
-  console.log(`- ${priceFileCSS}`);
-  if (excelFile) {
-    console.log(`- ${excelFile}`);
-    console.log(`- ${excelFile.replace('.xlsx', '.html')}`);
-  }
 }
 
 main().catch(console.error);

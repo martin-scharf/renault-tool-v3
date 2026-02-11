@@ -75,6 +75,35 @@
     const SETTINGS_KEY = "renault-settings-v3";
     const YEARS = [2025, 2026, 2027];
     const DLNR = "7455";
+    
+    // === CLOUD SYNC (Upstash Redis) ===
+    const UPSTASH_URL = "https://eu2-cool-manatee-30246.upstash.io";
+    const UPSTASH_TOKEN = "AXXzAAIjcDE3NTg4MjU0MzQxMzQ0NjNhODNkYThmZGNmN2UwNDgzZnAxMA";
+    const CLOUD_KEY_SETTINGS = "renault-tool-v3-settings";
+    
+    async function cloudSave(data) {
+      try {
+        const res = await fetch(`${UPSTASH_URL}/set/${CLOUD_KEY_SETTINGS}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${UPSTASH_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        return res.ok;
+      } catch(e) { console.error('Cloud save failed:', e); return false; }
+    }
+    
+    async function cloudLoad() {
+      try {
+        const res = await fetch(`${UPSTASH_URL}/get/${CLOUD_KEY_SETTINGS}`, {
+          headers: { 'Authorization': `Bearer ${UPSTASH_TOKEN}` }
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.result) return JSON.parse(json.result);
+        }
+      } catch(e) { console.error('Cloud load failed:', e); }
+      return null;
+    }
 
     // Teile-Code Beschreibungen
     const TEILE_CODE = {
@@ -205,8 +234,12 @@
       return mkDefault();
     }
 
-    function saveSettings(st) { 
+    function saveSettings(st, onCloud) { 
       try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(st)); } catch(e) {} 
+      // Auto-sync to cloud
+      cloudSave(st).then(ok => {
+        if (onCloud) onCloud(ok);
+      });
     }
 
     function loadData() {
@@ -388,9 +421,11 @@
       // Update settings
       const updSettings = useCallback((ns) => {
         setSettings(ns); 
-        saveSettings(ns);
-        setMsg("✓ Gespeichert"); 
-        setTimeout(() => setMsg(""), 2000);
+        setMsg("💾 Speichern...");
+        saveSettings(ns, (cloudOk) => {
+          setMsg(cloudOk ? "✓ Gespeichert + ☁️ Cloud" : "✓ Lokal (Cloud-Fehler)");
+          setTimeout(() => setMsg(""), 2500);
+        });
       }, []);
 
       // Parse file
@@ -923,6 +958,21 @@
                       }}
                     />
                     <button onClick={() => document.getElementById('backup-upload').click()} className="btn btn-secondary" style={{padding:"6px 12px",fontSize:11}}>📂 Import</button>
+                    <button onClick={async () => {
+                      setMsg("☁️ Speichere in Cloud...");
+                      const ok = await cloudSave(settings);
+                      setMsg(ok ? "☁️ Cloud gespeichert!" : "❌ Cloud-Fehler");
+                    }} className="btn" style={{padding:"6px 12px",fontSize:11,background:"#1e40af",color:"#93c5fd",border:"1px solid #1d4ed8"}}>☁️ Cloud speichern</button>
+                    <button onClick={async () => {
+                      setMsg("☁️ Lade von Cloud...");
+                      const data = await cloudLoad();
+                      if (data && data.families) {
+                        updSettings(data);
+                        setMsg("☁️ Von Cloud geladen!");
+                      } else {
+                        setMsg("❌ Keine Cloud-Daten gefunden");
+                      }
+                    }} className="btn" style={{padding:"6px 12px",fontSize:11,background:"#065f46",color:"#6ee7b7",border:"1px solid #047857"}}>☁️ Von Cloud laden</button>
                   </div>
                 </div>
 
