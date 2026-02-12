@@ -586,6 +586,18 @@
                   </div>
                 </div>
 
+                {/* Anleitung */}
+                <div style={{background:"rgba(30,41,59,0.8)",border:"1px solid #334155",borderRadius:10,padding:"16px 20px",marginBottom:20}}>
+                  <h3 style={{fontSize:14,fontWeight:700,color:"#f8fafc",marginBottom:10}}>So funktioniert das Tool:</h3>
+                  <ol style={{margin:0,paddingLeft:18,fontSize:12,color:"#94a3b8",lineHeight:1.8}}>
+                    <li><strong style={{color:"#e2e8f0"}}>Preisdatei laden:</strong> Aktuelle Renault TLDRAGP-Datei hochladen (Drag & Drop oder Klick)</li>
+                    <li><strong style={{color:"#e2e8f0"}}>Vergleich (optional):</strong> Zweite Datei laden um Preisänderungen zu sehen</li>
+                    <li><strong style={{color:"#e2e8f0"}}>Rabatte pflegen:</strong> Unter "⚙️ Einstellungen" die Rabatte pro Produktfamilie eintragen</li>
+                    <li><strong style={{color:"#e2e8f0"}}>Export:</strong> Preislisten als CSV, Excel oder HTML-Report herunterladen</li>
+                  </ol>
+                  <p style={{fontSize:11,color:"#64748b",marginTop:10}}>💡 Dieses Tool vergleicht auch Artikel-Status (Normal/Austausch/Ersetzt) und zeigt Ersatzteilnummern an.</p>
+                </div>
+
                 <div className="card" style={{marginBottom:24}}>
                   <h3 style={{fontSize:14,marginBottom:12}}>Dateien laden</h3>
                   
@@ -617,7 +629,7 @@
                     {busy && <p style={{fontSize:12,color:'#fbbf24',marginTop:8}}>⏳ Wird geladen...</p>}
                   </div>
                   
-                  <input ref={fRef} type="file" style={{display:"none"}} onChange={e => e.target.files[0] && loadToday(e.target.files[0])} />
+                  <input ref={fRef} type="file" accept="*" style={{display:"none"}} onChange={e => { if(e.target.files[0]) loadToday(e.target.files[0]); e.target.value=''; }} />
                   
                   {/* Vergleichsdatei */}
                   <div style={{display:"flex",gap:12,alignItems:"center"}}>
