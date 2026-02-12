@@ -77,18 +77,24 @@
     const DLNR = "7455";
     
     // === CLOUD SYNC (Upstash Redis) ===
-    const UPSTASH_URL = "https://eu2-cool-manatee-30246.upstash.io";
-    const UPSTASH_TOKEN = "AXXzAAIjcDE3NTg4MjU0MzQxMzQ0NjNhODNkYThmZGNmN2UwNDgzZnAxMA";
+    const UPSTASH_URL = "https://good-kiwi-51029.upstash.io";
+    const UPSTASH_TOKEN = "AcdVAAIncDIyZDA3Y2NkYTdiYzU0MGZkYWIzMjM0NjYwMmQ5ZDZjZHAyNTEwMjk";
     const CLOUD_KEY_SETTINGS = "renault-tool-v3-settings";
     
     async function cloudSave(data) {
       try {
+        const value = JSON.stringify(data);
         const res = await fetch(`${UPSTASH_URL}/set/${CLOUD_KEY_SETTINGS}`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${UPSTASH_TOKEN}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          headers: { 
+            'Authorization': `Bearer ${UPSTASH_TOKEN}`,
+            'Content-Type': 'text/plain'
+          },
+          body: value
         });
-        return res.ok;
+        const json = await res.json();
+        console.log('Cloud save response:', json);
+        return json.result === 'OK';
       } catch(e) { console.error('Cloud save failed:', e); return false; }
     }
     
@@ -99,7 +105,8 @@
         });
         if (res.ok) {
           const json = await res.json();
-          if (json.result) return JSON.parse(json.result);
+          console.log('Cloud load response:', json);
+          if (json.result && json.result !== null) return JSON.parse(json.result);
         }
       } catch(e) { console.error('Cloud load failed:', e); }
       return null;
