@@ -390,6 +390,15 @@
       };
     }
 
+    // Aktuelles Datum im Format TT_MM_JJJJ
+    function getDateStr() {
+      const d = new Date();
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      return `${dd}_${mm}_${yyyy}`;
+    }
+
     // Download als Excel mit deutschem Zahlenformat
     function dlExcel(rows, fn) {
       const formattedRows = rows.map(row => {
@@ -407,7 +416,9 @@
       const ws = XLSX.utils.json_to_sheet(formattedRows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Preisliste");
-      XLSX.writeFile(wb, fn.replace('.csv', '.xlsx'));
+      // Dateiname mit Datum
+      const filename = fn.replace('.xlsx', `_${getDateStr()}.xlsx`);
+      XLSX.writeFile(wb, filename);
     }
 
     // Fallback CSV download
@@ -948,15 +959,15 @@
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
                       <div style={{background:"#1e293b",borderRadius:10,padding:18,border:"1px solid #334155"}}>
                         <span className="badge badge-blue">KUNDE</span>
-                        <h4 style={{margin:"8px 0 3px",fontSize:14,fontWeight:600}}>Preisdatei Renault.xlsx</h4>
+                        <h4 style={{margin:"8px 0 3px",fontSize:14,fontWeight:600}}>Preisliste_Renault_Datum.xlsx</h4>
                         <p style={{fontSize:11,color:"#64748b",marginBottom:12}}>Artikel, Listenpreis, Kundenpreis</p>
-                        <button onClick={() => dlExcel(priceResult.defRows, "Preisdatei Renault.xlsx")} className="btn btn-primary" style={{width:"100%"}}>⬇️ Excel herunterladen</button>
+                        <button onClick={() => dlExcel(priceResult.defRows, "Preisliste_Renault.xlsx")} className="btn btn-primary" style={{width:"100%"}}>⬇️ Excel herunterladen</button>
                       </div>
                       <div style={{background:"#1e293b",borderRadius:10,padding:18,border:"1px solid #334155"}}>
                         <span className="badge badge-yellow">CSS</span>
-                        <h4 style={{margin:"8px 0 3px",fontSize:14,fontWeight:600}}>Preisliste css Renault.xlsx</h4>
+                        <h4 style={{margin:"8px 0 3px",fontSize:14,fontWeight:600}}>Preisliste_CSS_Renault_Datum.xlsx</h4>
                         <p style={{fontSize:11,color:"#64748b",marginBottom:12}}>Inkl. EK, Rabatte, Beschreibung, Gewicht</p>
-                        <button onClick={() => dlExcel(priceResult.extRows, "Preisliste css Renault.xlsx")} className="btn btn-primary" style={{width:"100%"}}>⬇️ Excel herunterladen</button>
+                        <button onClick={() => dlExcel(priceResult.extRows, "Preisliste_CSS_Renault.xlsx")} className="btn btn-primary" style={{width:"100%"}}>⬇️ Excel herunterladen</button>
                       </div>
                     </div>
                   </div>
