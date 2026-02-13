@@ -7,6 +7,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -356,9 +357,14 @@
       };
     }
 
+    // Formatiert Zahl mit Komma statt Punkt (deutsches Format)
+    function fmtDE(num) {
+      return num.toFixed(2).replace('.', ',');
+    }
+
     // === PROCESS CSV FOR PRICE LIST ===
     function processCSV(records, families, yr) {
-      const dL = [], eL = [];
+      const defRows = [], extRows = [];
       let ok = 0, skip = 0, noD = 0;
       
       for (const r of records) {
@@ -372,18 +378,39 @@
         const bC = rnd(lp * (100 - d.vk) / 100);
         const bS = rnd(lp * (100 - d.ek) / 100);
         
-        dL.push(`${r.teilenr};${lp.toFixed(2)};${bC.toFixed(2)}`);
-        eL.push(`${r.teilenr};${lp.toFixed(2)};${bC.toFixed(2)};${bS.toFixed(2)};${d.vk};${d.ek};${r.bez1};${r.gewicht};${DLNR}`);
+        // Speichere als Objekte für Excel-Export
+        defRows.push({ Artikel: r.teilenr, Listenpreis: lp, Kundenpreis: bC });
+        extRows.push({ Artikel: r.teilenr, Listenpreis: lp, Kundenpreis: bC, EK_Preis: bS, Rabatt_VK: d.vk, Rabatt_EK: d.ek, Bezeichnung: r.bez1, Gewicht: r.gewicht, DLNR: DLNR });
         ok++;
       }
       
       return {
-        defCSV: "article;list_price;buying_price\n" + dL.join("\n"),
-        extCSV: "article;list_price;buying_price;buying_price_self;discount;discount_self;description;weight;DLNR\n" + eL.join("\n"),
+        defRows, extRows,
         ok, skip, noD, total: records.length
       };
     }
 
+    // Download als Excel mit deutschem Zahlenformat
+    function dlExcel(rows, fn) {
+      const formattedRows = rows.map(row => {
+        const newRow = {};
+        for (const [key, val] of Object.entries(row)) {
+          if (typeof val === 'number') {
+            newRow[key] = fmtDE(val);
+          } else {
+            newRow[key] = val;
+          }
+        }
+        return newRow;
+      });
+      
+      const ws = XLSX.utils.json_to_sheet(formattedRows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Preisliste");
+      XLSX.writeFile(wb, fn.replace('.csv', '.xlsx'));
+    }
+
+    // Fallback CSV download
     function dl(content, fn) {
       const a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([content], {type:"text/csv;charset=utf-8;"}));
@@ -921,15 +948,15 @@
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
                       <div style={{background:"#1e293b",borderRadius:10,padding:18,border:"1px solid #334155"}}>
                         <span className="badge badge-blue">KUNDE</span>
-                        <h4 style={{margin:"8px 0 3px",fontSize:14,fontWeight:600}}>Preisdatei Renault.csv</h4>
+                        <h4 style={{margin:"8px 0 3px",fontSize:14,fontWeight:600}}>Preisdatei Renault.xlsx</h4>
                         <p style={{fontSize:11,color:"#64748b",marginBottom:12}}>Artikel, Listenpreis, Kundenpreis</p>
-                        <button onClick={() => dl(priceResult.defCSV, "Preisdatei Renault.csv")} className="btn btn-primary" style={{width:"100%"}}>⬇️ Herunterladen</button>
+                        <button onClick={() => dlExcel(priceResult.defRows, "Preisdatei Renault.xlsx")} className="btn btn-primary" style={{width:"100%"}}>⬇️ Excel herunterladen</button>
                       </div>
                       <div style={{background:"#1e293b",borderRadius:10,padding:18,border:"1px solid #334155"}}>
                         <span className="badge badge-yellow">CSS</span>
-                        <h4 style={{margin:"8px 0 3px",fontSize:14,fontWeight:600}}>Preisliste css Renault.csv</h4>
+                        <h4 style={{margin:"8px 0 3px",fontSize:14,fontWeight:600}}>Preisliste css Renault.xlsx</h4>
                         <p style={{fontSize:11,color:"#64748b",marginBottom:12}}>Inkl. EK, Rabatte, Beschreibung, Gewicht</p>
-                        <button onClick={() => dl(priceResult.extCSV, "Preisliste css Renault.csv")} className="btn btn-primary" style={{width:"100%"}}>⬇️ Herunterladen</button>
+                        <button onClick={() => dlExcel(priceResult.extRows, "Preisliste css Renault.xlsx")} className="btn btn-primary" style={{width:"100%"}}>⬇️ Excel herunterladen</button>
                       </div>
                     </div>
                   </div>
