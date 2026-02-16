@@ -421,11 +421,23 @@
       XLSX.writeFile(wb, filename);
     }
 
-    // Fallback CSV download
+    // CSV download
     function dl(content, fn) {
       const a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([content], {type:"text/csv;charset=utf-8;"}));
       a.download = fn; a.click();
+    }
+
+    // CSS CSV Export im Satzaufbau: article;list_price;buying_price;buying_price_self;discount;discount_self;description;weight;DLNR
+    function dlCssCSV(rows, fn) {
+      const header = "article;list_price;buying_price;buying_price_self;discount;discount_self;description;weight;DLNR";
+      const fmtP = n => typeof n === 'number' ? n.toFixed(2) : n;
+      const lines = rows.map(r => 
+        [r.Artikel, fmtP(r.Listenpreis), fmtP(r.Kundenpreis), fmtP(r.EK_Preis), fmtP(r.Rabatt_VK), fmtP(r.Rabatt_EK), r.Bezeichnung, r.Gewicht, r.DLNR].join(";")
+      );
+      const csv = header + "\n" + lines.join("\n");
+      const filename = fn.replace('.csv', `_${getDateStr()}.csv`);
+      dl(csv, filename);
     }
 
     // === MAIN APP ===
@@ -965,9 +977,9 @@
                       </div>
                       <div style={{background:"#1e293b",borderRadius:10,padding:18,border:"1px solid #334155"}}>
                         <span className="badge badge-yellow">CSS</span>
-                        <h4 style={{margin:"8px 0 3px",fontSize:14,fontWeight:600}}>Preisliste_CSS_Renault_Datum.xlsx</h4>
-                        <p style={{fontSize:11,color:"#64748b",marginBottom:12}}>Inkl. EK, Rabatte, Beschreibung, Gewicht</p>
-                        <button onClick={() => dlExcel(priceResult.extRows, "Preisliste_CSS_Renault.xlsx")} className="btn btn-primary" style={{width:"100%"}}>⬇️ Excel herunterladen</button>
+                        <h4 style={{margin:"8px 0 3px",fontSize:14,fontWeight:600}}>Preisliste_CSS_Renault_Datum.csv</h4>
+                        <p style={{fontSize:11,color:"#64748b",marginBottom:12}}>CSV-Export für CSS Warenwirtschaft</p>
+                        <button onClick={() => dlCssCSV(priceResult.extRows, "Preisliste_CSS_Renault.csv")} className="btn btn-primary" style={{width:"100%"}}>⬇️ CSV herunterladen</button>
                       </div>
                     </div>
                   </div>
